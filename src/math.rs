@@ -313,6 +313,66 @@ impl ApplyConstraints<Constraints<Option<f32>>, f32> for f32 {
     }
 }
 
+impl ApplyConstraints<Constraints<Option<f32>>, Option<f32>> for Option<f32> {
+    fn apply_min(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
+        self.maybe_min(rhs.min)
+    }
+
+    fn apply_max(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
+        self.maybe_max(rhs.max)
+    }
+
+    fn apply_clamp(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
+        self.maybe_clamp(rhs.min, rhs.max)
+    }
+}
+
+impl ApplyConstraints<Size<Constraints<Option<f32>>>, Size<f32>> for Size<f32> {
+    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32> {
+        Size {
+            width: self.width.apply_min(rhs.width),
+            height: self.height.apply_min(rhs.height),
+        }
+    }
+
+    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32>{
+        Size {
+            width: self.width.apply_max(rhs.width),
+            height: self.height.apply_max(rhs.height),
+        }
+    }
+
+    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32> {
+        Size {
+            width: self.width.apply_clamp(rhs.width),
+            height: self.height.apply_clamp(rhs.height),
+        }
+    }
+}
+
+impl Constraints<Option<f32>> {
+    #[inline]
+    pub fn clamp_suggested(&self) -> Option<f32> {
+         match (self.suggested, self.min, self.max) {
+            (Some(base), Some(min), Some(max)) => Some(base.min(max).max(min)),
+            (Some(base), None, Some(max)) => Some(base.min(max)),
+            (Some(base), Some(min), None) => Some(base.max(min)),
+            (Some(base), None, None) => Some(base),
+            (None, _, _) => None,
+        }
+    }
+}
+
+impl Size<Constraints<Option<f32>>> {
+    #[inline]
+    pub fn clamp_suggested(&self) -> Size<Option<f32>> {
+        Size {
+            width: self.width.clamp_suggested(),
+            height: self.height.clamp_suggested()
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

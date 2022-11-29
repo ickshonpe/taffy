@@ -285,6 +285,16 @@ impl ConstraintDefault for Option<f32> {
     }
 }
 
+impl ConstraintDefault for Size<Option<f32>> {
+    #[inline]
+    fn default_constraint() -> Self {
+        Size {
+            width: None,
+            height: None,
+        }
+    }
+}
+
 impl <T> Constraints<T> where T: ConstraintDefault + Copy {
     #[inline]
     pub fn default_constraints() -> Self {

@@ -5,6 +5,7 @@ use crate::layout::{AvailableSpace, RunMode, SizingMode};
 use crate::math::MaybeMath;
 use crate::node::Node;
 use crate::resolve::{MaybeResolve, ResolveOrDefault};
+use crate::style::Constraints;
 use crate::tree::LayoutTree;
 
 #[cfg(feature = "debug")]
@@ -39,6 +40,32 @@ pub(crate) fn compute(
             let node_min_size = style.min_size().maybe_resolve(available_space.as_options());
             let node_max_size = style.max_size().maybe_resolve(available_space.as_options());
             (node_size, node_min_size, node_max_size)
+        }
+    };
+
+    let node_constraint = match sizing_mode {
+        SizingMode::ContentSize => {
+            // let node_size = known_dimensions;
+            // let node_min_size = Size::NONE;
+            // let node_max_size = Size::NONE;
+            // (node_size, node_min_size, node_max_size)
+            Constraints::suggested(known_dimensions)
+        }
+        SizingMode::InherentSize => {
+            // let style_size = style.size.maybe_resolve(available_space.as_options());
+            // let node_size = known_dimensions.or(style_size);
+            // let node_min_size = style.min_size.maybe_resolve(available_space.as_options());
+            // let node_max_size = style.max_size.maybe_resolve(available_space.as_options());
+            let style_size = style.suggested_size().maybe_resolve(available_space.as_options());
+            let node_size = known_dimensions.or(style_size);
+            let node_min_size = style.min_size().maybe_resolve(available_space.as_options());
+            let node_max_size = style.max_size().maybe_resolve(available_space.as_options());
+            //(node_size, node_min_size, node_max_size)
+            Constraints {
+                suggested: node_size,
+                min: node_min_size,
+                max: node_max_size,
+            }
         }
     };
 

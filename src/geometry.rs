@@ -3,6 +3,20 @@
 use crate::style::{Dimension, FlexDirection, Constraints, Constraint};
 use core::ops::Add;
 
+pub enum AxisSize<T> {
+    Height(T),
+    Width(T),
+}
+
+impl <T> AxisSize<T> {
+    pub fn value(self) -> T {
+        match self {
+            AxisSize::Height(inner) => inner,
+            AxisSize::Width(inner) => inner,
+        }
+    }
+}
+
 /// An axis-aligned UI rectangle
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -221,22 +235,22 @@ impl<T> Size<T> {
     /// Gets the extent of the main layout axis
     ///
     /// Whether this is the width or height depends on the `direction` provided
-    pub(crate) fn main(self, direction: FlexDirection) -> T {
+    pub(crate) fn main(self, direction: FlexDirection) -> AxisSize<T> {
         if direction.is_row() {
-            self.width
+            AxisSize::Width(self.width)
         } else {
-            self.height
+            AxisSize::Height(self.height)
         }
     }
 
     /// Gets the extent of the cross layout axis
     ///
     /// Whether this is the width or height depends on the `direction` provided
-    pub(crate) fn cross(self, direction: FlexDirection) -> T {
+    pub(crate) fn cross(self, direction: FlexDirection) -> AxisSize<T> {
         if direction.is_row() {
-            self.height
+            AxisSize::Height(self.height)
         } else {
-            self.width
+            AxisSize::Width(self.width)
         }
     }
 }

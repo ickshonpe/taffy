@@ -131,12 +131,14 @@ pub fn compute(
     // Pull these out earlier to avoid borrowing issues
     let size = style.size_constraints.maybe_resolve(known_dimensions);
 
-    let min_size = style.min_size().maybe_resolve(known_dimensions);
-    let max_size = style.max_size().maybe_resolve(known_dimensions);
+    // let min_size = style.min_size().maybe_resolve(known_dimensions);
+    // let max_size = style.max_size().maybe_resolve(known_dimensions);
     //let clamped_style_size = style.suggested_size().maybe_resolve(known_dimensions).maybe_clamp(min_size, max_size);
     
-    let clamped_style_size = size.suggested().maybe_clamp(min_size, max_size);
+    let clamped_style_size = size.clamp_suggested();
+        //.suggested().maybe_clamp(min_size, max_size);
 
+    
     if has_min_max_sizes {
         #[cfg(feature = "debug")]
         NODE_LOGGER.log("FLEX: two-pass");
@@ -149,7 +151,9 @@ pub fn compute(
             RunMode::ComputeSize,
         );
 
-        let clamped_first_pass_size = first_pass.maybe_clamp(min_size, max_size);
+        let clamped_first_pass_size = 
+            //first_pass.maybe_clamp(size.min(), size.max());
+            first_pass.apply_clamp(size);
 
         compute_preliminary(
             tree,
@@ -509,7 +513,7 @@ fn determine_flex_base_size(
 
         // A. If the item has a definite used flex basis, that’s the flex base size.
 
-        let flex_basis = child_style.flex_basis.maybe_resolve(constants.node_inner_size.main(constants.dir));
+        let flex_basis = child_style.flex_basis.maybe_resolve(constants.node_inner_size.main(constants.dir).value());
         if flex_basis.is_some() {
             child.flex_basis = flex_basis.unwrap_or(0.0);
             continue;
@@ -930,12 +934,14 @@ fn determine_hypothetical_cross_size(
     available_space: Size<AvailableSpace>,
 ) {
     for child in line.items.iter_mut() {
-        let child_cross = child
-            //.size
-            .constraints.suggested()
-            .cross(constants.dir)
-            .maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir));
+        // let child_cross = child
+        //     //.size
+        //     .constraints.suggested()
+        //     .cross(constants.dir)
+        //     .maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir));
 
+        //let child_cross = child.constraints.cross(constants.dir).suggested.apply_clamp(child.constraints.cross(constants.dir));
+        let child_cross = child.constraints.cross(constants.dir).clamp_suggested();
         child.hypothetical_inner_size.set_cross(
             constants.dir,
             compute_node_layout(
@@ -961,7 +967,8 @@ fn determine_hypothetical_cross_size(
                 SizingMode::ContentSize,
             )
             .cross(constants.dir)
-            .maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir)),
+            //.maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir)),
+            .apply_clamp(child.constraints.cross(constants.dir)),
         );
 
         child.hypothetical_outer_size.set_cross(
@@ -1165,7 +1172,8 @@ fn determine_used_cross_size(
                     && child_style.cross_size(constants.dir) == Dimension::Auto
                 {
                     (line_cross_size - child.margin.cross_axis_sum(constants.dir))
-                        .maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir))
+                        //.maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir))
+                        .apply_clamp(child.constraints.cross(constants.dir))
                 } else {
                     child.hypothetical_inner_size.cross(constants.dir)
                 },
@@ -1709,10 +1717,15 @@ fn perform_absolute_layout_on_absolute_children(tree: &mut impl LayoutTree, node
         let (start_cross, end_cross) = if constants.is_row { (top, bottom) } else { (start, end) };
 
         // Compute known dimensions from min/max/inherent size styles
-        let style_size = child_style.suggested_size().maybe_resolve(constants.container_size);
-        let min_size = child_style.min_size().maybe_resolve(constants.container_size);
-        let max_size = child_style.max_size().maybe_resolve(constants.container_size);
-        let mut known_dimensions = style_size.maybe_clamp(min_size, max_size);
+        // let style_size = child_style.suggested_size().maybe_resolve(constants.container_size);
+        // let min_size = child_style.min_size().maybe_resolve(constants.container_size);
+        // let max_size = child_style.max_size().maybe_resolve(constants.container_size);
+        // let mut known_dimensions = style_size.maybe_clamp(min_size, max_size);
+        
+        let mut known_dimensions = child_style.size_constraints
+            .maybe_resolve(constants.container_size)
+            .clamp_suggested();
+            
 
         // Fill in width from left/right and height from top/bottom is appropriate
         if known_dimensions.width.is_none() && start.is_some() && end.is_some() {

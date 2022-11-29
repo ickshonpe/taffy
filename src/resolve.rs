@@ -71,6 +71,16 @@ impl MaybeResolve<Option<f32>, Constraints<Option<f32>>> for Constraints<Dimensi
     }
 }
 
+impl MaybeResolve<f32, Constraints<Option<f32>>> for Constraints<Dimension> {
+    fn maybe_resolve(self, context: f32) -> Constraints<Option<f32>> {
+        Constraints {
+            min: self.min.maybe_resolve(context),
+            suggested: self.suggested.maybe_resolve(context),
+            max: self.max.maybe_resolve(context)
+        }
+    }
+}
+
 impl ResolveOrDefault<Option<f32>, f32> for Dimension {
     /// Will return a default value of result is evaluated to `None`
     #[inline]
