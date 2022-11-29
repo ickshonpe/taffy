@@ -1,6 +1,8 @@
 //! Contains numerical helper traits and functions
 #![allow(clippy::manual_clamp)]
 
+use std::panic::panic_any;
+
 use crate::geometry::Axis;
 use crate::geometry::Size;
 use crate::layout::AvailableSpace;
@@ -286,6 +288,8 @@ impl MaybeMath<Option<f32>, AvailableSpace> for AvailableSpace {
     }
 }
 
+
+
 impl<In, Out, T: MaybeMath<In, Out>> MaybeMath<Size<In>, Size<Out>> for Size<T> {
     fn maybe_min(self, rhs: Size<In>) -> Size<Out> {
         Size { width: self.width.maybe_min(rhs.width), height: self.height.maybe_min(rhs.height) }
@@ -446,6 +450,42 @@ impl ClampConstraint for Axis<Constraints<Option<f32>>> {
     #[inline]
     fn clamp_suggested(&self) -> Axis<Option<f32>> {
         self.with_inner(|inner| inner.clamp_suggested())
+    }
+}
+
+impl <T> std::ops::Add for Axis<T> where T: std::ops::Add<Output=T> {
+    type Output=Axis<T>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Axis::Height(g), Axis::Height(h)) => Axis::Height(g + h),
+            (Axis::Width(v), Axis::Width(w)) => Axis::Width(v + w),
+            _ => panic_any("Cannot add height and width together")
+        }
+    }
+}
+
+impl <T> std::ops::Sub for Axis<T> where T: std::ops::Sub<Output=T> {
+    type Output=Axis<T>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Axis::Height(g), Axis::Height(h)) => Axis::Height(g - h),
+            (Axis::Width(v), Axis::Width(w)) => Axis::Width(v - w),
+            _ => panic_any("Cannot subtract height and width together")
+        }
+    }
+}
+
+impl <T> std::ops::Mul for Axis<T> where T: std::ops::Mul<Output=T> {
+    type Output=Axis<T>;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Axis::Height(g), Axis::Height(h)) => Axis::Height(g * h),
+            (Axis::Width(v), Axis::Width(w)) => Axis::Width(v * w),
+            _ => panic_any("Cannot subtract height and width together")
+        }
     }
 }
 

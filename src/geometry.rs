@@ -255,6 +255,13 @@ impl<T> Size<T> {
         Size { width: f(self.width, other.width), height: f(self.height, other.height) }
     }
 
+    pub (crate) fn set(&mut self, value: Axis<T>) {
+        match value {
+            Axis::Width(width) => self.width = width,
+            Axis::Height(height) => self.height = height,
+        }
+    }
+
     /// Sets the extent of the main layout axis
     ///
     /// Whether this is the width or height depends on the `direction` provided
@@ -265,6 +272,8 @@ impl<T> Size<T> {
             self.height = value
         }
     }
+
+    
 
     /// Sets the extent of the cross layout axis
     ///
@@ -282,9 +291,9 @@ impl<T> Size<T> {
     /// Whether this is the width or height depends on the `direction` provided
     pub(crate) fn main(self, direction: FlexDirection) -> Axis<T> {
         if direction.is_row() {
-            Axis::Width(self.width)
+            self.width()
         } else {
-            Axis::Height(self.height)
+            self.height()
         }
     }
 
@@ -293,10 +302,18 @@ impl<T> Size<T> {
     /// Whether this is the width or height depends on the `direction` provided
     pub(crate) fn cross(self, direction: FlexDirection) -> Axis<T> {
         if direction.is_row() {
-            Axis::Height(self.height)
+            self.height()
         } else {
-            Axis::Width(self.width)
+            self.width()
         }
+    }
+
+    pub(crate) fn height(self) -> Axis<T> {
+        Axis::Height(self.height)
+    }
+
+    pub(crate) fn width(self) -> Axis<T> {
+        Axis::Width(self.width)
     }
 }
 
