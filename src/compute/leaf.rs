@@ -43,29 +43,18 @@ pub(crate) fn compute(
         }
     };
 
-    let node_constraint = match sizing_mode {
+    let node_constraint: Size<Constraints<Option<f32>>> = match sizing_mode {
         SizingMode::ContentSize => {
-            // let node_size = known_dimensions;
-            // let node_min_size = Size::NONE;
-            // let node_max_size = Size::NONE;
-            // (node_size, node_min_size, node_max_size)
-            Constraints::suggested(known_dimensions)
+            Size {
+                width: Constraints::suggested(known_dimensions.width),
+                height: Constraints::suggested(known_dimensions.height)
+            }
         }
         SizingMode::InherentSize => {
-            // let style_size = style.size.maybe_resolve(available_space.as_options());
-            // let node_size = known_dimensions.or(style_size);
-            // let node_min_size = style.min_size.maybe_resolve(available_space.as_options());
-            // let node_max_size = style.max_size.maybe_resolve(available_space.as_options());
-            let style_size = style.suggested_size().maybe_resolve(available_space.as_options());
-            let node_size = known_dimensions.or(style_size);
-            let node_min_size = style.min_size().maybe_resolve(available_space.as_options());
-            let node_max_size = style.max_size().maybe_resolve(available_space.as_options());
-            //(node_size, node_min_size, node_max_size)
-            Constraints {
-                suggested: node_size,
-                min: node_min_size,
-                max: node_max_size,
-            }
+            let mut size = style.size_constraints.maybe_resolve(available_space.as_options());
+            size.width.suggested = known_dimensions.width.or(size.width.suggested);
+            size.height.suggested = known_dimensions.height.or(size.height.suggested);
+            size
         }
     };
 

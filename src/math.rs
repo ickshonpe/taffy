@@ -1,7 +1,7 @@
 //! Contains numerical helper traits and functions
 #![allow(clippy::manual_clamp)]
 
-use crate::geometry::AxisSize;
+use crate::geometry::Axis;
 use crate::geometry::Size;
 use crate::layout::AvailableSpace;
 use crate::style::Constraints;
@@ -179,54 +179,54 @@ impl MaybeMath<Option<f32>, f32> for f32 {
     }
 }
 
-impl MaybeMath<f32, AxisSize<Option<f32>>> for AxisSize<Option<f32>> {
-    fn maybe_min(self, rhs: f32) -> AxisSize<Option<f32>> {
+impl MaybeMath<f32, Axis<Option<f32>>> for Axis<Option<f32>> {
+    fn maybe_min(self, rhs: f32) -> Axis<Option<f32>> {
         self.with_inner(|inner| 
             inner.maybe_min(rhs)
         )
     }
 
-    fn maybe_max(self, rhs: f32) -> AxisSize<Option<f32>> {
+    fn maybe_max(self, rhs: f32) -> Axis<Option<f32>> {
         self.with_inner(|inner| 
             inner.maybe_max(rhs)
         )
     }
 
-    fn maybe_clamp(self, min: f32, max: f32) -> AxisSize<Option<f32>> {
+    fn maybe_clamp(self, min: f32, max: f32) -> Axis<Option<f32>> {
         self.with_inner(|inner| 
             inner.maybe_clamp(min, max)
         )
     }
 
-    fn maybe_add(self, rhs: f32) -> AxisSize<Option<f32>> {
+    fn maybe_add(self, rhs: f32) -> Axis<Option<f32>> {
         self.with_inner(|inner| 
             inner.maybe_add(rhs)
         )
     }
 
-    fn maybe_sub(self, rhs: f32) -> AxisSize<Option<f32>> {
+    fn maybe_sub(self, rhs: f32) -> Axis<Option<f32>> {
         self.with_inner(|inner| 
             inner.maybe_sub(rhs)
         )
     }
 }
 
-impl MaybeMath<Size<Option<f32>>, AxisSize<f32>> for AxisSize<f32> {
-    fn maybe_min(self, rhs: Size<Option<f32>>) -> AxisSize<f32> {
+impl MaybeMath<Size<Option<f32>>, Axis<f32>> for Axis<f32> {
+    fn maybe_min(self, rhs: Size<Option<f32>>) -> Axis<f32> {
         self.with_size(
             rhs, 
             |inner, other| inner.maybe_min(other)
         )
     }
 
-    fn maybe_max(self, rhs: Size<Option<f32>>) -> AxisSize<f32> {
+    fn maybe_max(self, rhs: Size<Option<f32>>) -> Axis<f32> {
         self.with_size(
             rhs, 
             |inner, other| inner.maybe_max(other)
         )
     }
 
-    fn maybe_clamp(self, min: Size<Option<f32>>, max: Size<Option<f32>>) -> AxisSize<f32> {
+    fn maybe_clamp(self, min: Size<Option<f32>>, max: Size<Option<f32>>) -> Axis<f32> {
         // self.with_size(
         //     min,
         //     |inner, min| 
@@ -236,11 +236,11 @@ impl MaybeMath<Size<Option<f32>>, AxisSize<f32>> for AxisSize<f32> {
         .with_inner(|((size, min), max)| size.maybe_clamp(min, max))
     }
 
-    fn maybe_add(self, rhs: Size<Option<f32>>) -> AxisSize<f32> {
+    fn maybe_add(self, rhs: Size<Option<f32>>) -> Axis<f32> {
         self.pair(rhs).with_inner(|(size, other)| size.maybe_add(other))
     }
 
-    fn maybe_sub(self, rhs: Size<Option<f32>>) -> AxisSize<f32> {
+    fn maybe_sub(self, rhs: Size<Option<f32>>) -> Axis<f32> {
         self.pair(rhs).with_inner(|(size, other)| size.maybe_sub(other))
     }
 }
@@ -416,13 +416,13 @@ impl ApplyConstraints<Size<Constraints<Option<f32>>>, Size<f32>> for Size<f32> {
     }
 }
 
-impl ApplyConstraints<Size<Constraints<Option<f32>>>, AxisSize<f32>> for AxisSize<f32> {
-    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> AxisSize<f32> {
+impl ApplyConstraints<Size<Constraints<Option<f32>>>, Axis<f32>> for Axis<f32> {
+    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> Axis<f32> {
         let constraint = match self {
-            AxisSize::Height(_) => {
+            Axis::Height(_) => {
                 rhs.height
             },
-            AxisSize::Width(_) => {
+            Axis::Width(_) => {
                 rhs.width
             }
         };
@@ -431,24 +431,24 @@ impl ApplyConstraints<Size<Constraints<Option<f32>>>, AxisSize<f32>> for AxisSiz
         
     }
 
-    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> AxisSize<f32> {
+    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> Axis<f32> {
         let constraint = match self {
-            AxisSize::Height(_) => {
+            Axis::Height(_) => {
                 rhs.height
             },
-            AxisSize::Width(_) => {
+            Axis::Width(_) => {
                 rhs.width
             }
         };
         self.with_inner(|inner| inner.apply_max(constraint))
     }
 
-    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> AxisSize<f32> {
+    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> Axis<f32> {
         let constraint = match self {
-            AxisSize::Height(_) => {
+            Axis::Height(_) => {
                 rhs.height
             },
-            AxisSize::Width(_) => {
+            Axis::Width(_) => {
                 rhs.width
             }
         };
@@ -479,9 +479,9 @@ impl Size<Constraints<Option<f32>>> {
     }
 }
 
-impl AxisSize<Constraints<Option<f32>>> {
+impl Axis<Constraints<Option<f32>>> {
     #[inline]
-    pub fn clamp_suggested(&self) -> AxisSize<Option<f32>> {
+    pub fn clamp_suggested(&self) -> Axis<Option<f32>> {
         self.with_inner(|inner| inner.clamp_suggested())
     }
 }

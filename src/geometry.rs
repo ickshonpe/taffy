@@ -4,12 +4,12 @@ use crate::style::{Dimension, FlexDirection, Constraints, Constraint};
 use core::ops::Add;
 use std::fs::DirEntry;
 
-pub enum AxisSize<T> {
+pub enum Axis<T> {
     Height(T),
     Width(T),
 }
 
-impl <T> Clone for AxisSize<T> where T: Clone {
+impl <T> Clone for Axis<T> where T: Clone {
     fn clone(&self) -> Self {
         match self {
             Self::Height(arg0) => Self::Height(arg0.clone()),
@@ -18,16 +18,16 @@ impl <T> Clone for AxisSize<T> where T: Clone {
     }
 }
 
-impl <T> Copy for AxisSize<T> where T: Copy {}
+impl <T> Copy for Axis<T> where T: Copy {}
 
-impl <T> AxisSize<T> {
+impl <T> Axis<T> {
     pub fn has_dir(&self, direction: FlexDirection) -> bool {
         match direction {
             FlexDirection::Row | FlexDirection::RowReverse => matches!(self, Self::Width(_)),
             FlexDirection::Column | FlexDirection::ColumnReverse => matches!(self, Self::Height(_)),
         }
     }
-    pub fn from_dir(direction: FlexDirection, value: T) -> AxisSize<T> {
+    pub fn from_dir(direction: FlexDirection, value: T) -> Axis<T> {
         match direction {
             FlexDirection::Row | FlexDirection::RowReverse => Self::Width(value),
             FlexDirection::Column | FlexDirection::ColumnReverse => Self::Height(value),
@@ -36,29 +36,29 @@ impl <T> AxisSize<T> {
 
     pub fn value(self) -> T {
         match self {
-            AxisSize::Width(inner) => inner,
-            AxisSize::Height(inner) => inner,
+            Axis::Width(inner) => inner,
+            Axis::Height(inner) => inner,
         }
     }
 
-    pub fn with_inner<U>(self, f: impl Fn(T) -> U) -> AxisSize<U> {
+    pub fn with_inner<U>(self, f: impl Fn(T) -> U) -> Axis<U> {
         match self {
-            AxisSize::Width(width) => AxisSize::Width(f(width)),
-            AxisSize::Height(height) => AxisSize::Height(f(height))
+            Axis::Width(width) => Axis::Width(f(width)),
+            Axis::Height(height) => Axis::Height(f(height))
         }
     }
 
-    pub fn with_size<U, V>(self, size: Size<U>, f: impl Fn(T, U) -> V) -> AxisSize<V> {
+    pub fn with_size<U, V>(self, size: Size<U>, f: impl Fn(T, U) -> V) -> Axis<V> {
         match self {
-            AxisSize::Width(width) => AxisSize::Width(f(width, size.width)),
-            AxisSize::Height(height) => AxisSize::Height(f(height, size.height))
+            Axis::Width(width) => Axis::Width(f(width, size.width)),
+            Axis::Height(height) => Axis::Height(f(height, size.height))
         }
     }
 
-    pub fn pair<U>(self, size: Size<U>) -> AxisSize<(T, U)> {
+    pub fn pair<U>(self, size: Size<U>) -> Axis<(T, U)> {
         match self {
-            AxisSize::Width(width) => AxisSize::Width((width, size.width)),
-            AxisSize::Height(height) => AxisSize::Height((height, size.height))
+            Axis::Width(width) => Axis::Width((width, size.width)),
+            Axis::Height(height) => Axis::Height((height, size.height))
         }
     }
 }
@@ -281,22 +281,22 @@ impl<T> Size<T> {
     /// Gets the extent of the main layout axis
     ///
     /// Whether this is the width or height depends on the `direction` provided
-    pub(crate) fn main(self, direction: FlexDirection) -> AxisSize<T> {
+    pub(crate) fn main(self, direction: FlexDirection) -> Axis<T> {
         if direction.is_row() {
-            AxisSize::Width(self.width)
+            Axis::Width(self.width)
         } else {
-            AxisSize::Height(self.height)
+            Axis::Height(self.height)
         }
     }
 
     /// Gets the extent of the cross layout axis
     ///
     /// Whether this is the width or height depends on the `direction` provided
-    pub(crate) fn cross(self, direction: FlexDirection) -> AxisSize<T> {
+    pub(crate) fn cross(self, direction: FlexDirection) -> Axis<T> {
         if direction.is_row() {
-            AxisSize::Height(self.height)
+            Axis::Height(self.height)
         } else {
-            AxisSize::Width(self.width)
+            Axis::Width(self.width)
         }
     }
 }
@@ -569,19 +569,19 @@ impl Size<Constraints<Dimension>> {
     }
 }
 
-impl <T> AxisSize<Constraints<T>> where T: Copy {
+impl <T> Axis<Constraints<T>> where T: Copy {
     #[inline]
-    pub fn min(&self) -> AxisSize<T> {
+    pub fn min(&self) -> Axis<T> {
         self.with_inner(|inner| inner.min)
     }
 
     #[inline]
-    pub fn max(&self) -> AxisSize<T> {
+    pub fn max(&self) -> Axis<T> {
         self.with_inner(|inner| inner.max) 
     }
 
     #[inline]
-    pub fn suggested(&self) -> AxisSize<T> {
+    pub fn suggested(&self) -> Axis<T> {
         self.with_inner(|inner| inner.suggested)
     }
 }
