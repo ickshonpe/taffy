@@ -1,6 +1,6 @@
 //! Helper trait to calculate dimensions during layout resolution
 
-use crate::prelude::{Dimension, Rect, Size};
+use crate::{prelude::{Dimension, Rect, Size}, style::Constraints};
 
 /// Trait to encapsulate behaviour where we need to resolve from a
 /// potentially context-dependent size or dimension into
@@ -58,6 +58,16 @@ impl<In, Out, T: MaybeResolve<In, Out>> MaybeResolve<Size<In>, Size<Out>> for Si
     #[inline]
     fn maybe_resolve(self, context: Size<In>) -> Size<Out> {
         Size { width: self.width.maybe_resolve(context.width), height: self.height.maybe_resolve(context.height) }
+    }
+}
+
+impl MaybeResolve<Option<f32>, Constraints<Option<f32>>> for Constraints<Dimension> {
+    fn maybe_resolve(self, context: Option<f32>) -> Constraints<Option<f32>> {
+        Constraints {
+            min: self.min.maybe_resolve(context),
+            suggested: self.suggested.maybe_resolve(context),
+            max: self.max.maybe_resolve(context)
+        }
     }
 }
 

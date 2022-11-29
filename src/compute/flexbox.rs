@@ -9,7 +9,7 @@ use crate::layout::{AvailableSpace, Layout, RunMode, SizingMode};
 use crate::math::MaybeMath;
 use crate::node::Node;
 use crate::resolve::{MaybeResolve, ResolveOrDefault};
-use crate::style::{AlignContent, AlignSelf, Dimension, Display, FlexWrap, JustifyContent, PositionType};
+use crate::style::{AlignContent, AlignSelf, Dimension, Display, FlexWrap, JustifyContent, PositionType, Constraints};
 use crate::style::{FlexDirection, Style};
 use crate::sys::Vec;
 use crate::tree::LayoutTree;
@@ -28,7 +28,7 @@ struct FlexItem {
     // min_size: Size<Option<f32>>,
     // /// The maximum allowable size of this item
     // max_size: Size<Option<f32>>,
-    size_constraints: Size<Option<f32>>,
+    constraints: Size<Constraints<Option<f32>>>,
 
     /// The final offset of this item
     position: Rect<Option<f32>>,
@@ -123,13 +123,10 @@ pub fn compute(
     run_mode: RunMode,
 ) -> Size<f32> {
     let style = tree.style(node);
-    // let has_min_max_sizes = style.min_size.width.is_defined()
-    //     || style.min_size.height.is_defined()
-    //     || style.max_size.width.is_defined()
-    //     || style.max_size.height.is_defined();
 
-    let has_min_max_sizes = style.size_constraints.width.has_min_or_max()
-        || style.size_constraints.height.has_min_or_max();
+    let has_min_max_sizes = style.size_constraints.width.has_min_or_max();
+    // has_min_or_max()
+    //     || style.size_constraints.height.has_min_or_max();
 
     // Pull these out earlier to avoid borrowing issues
     let min_size = style.min_size().maybe_resolve(known_dimensions);
@@ -406,9 +403,10 @@ fn generate_anonymous_flex_items(tree: &impl LayoutTree, node: Node, constants: 
         .map(|(child, child_style)| {
             FlexItem {
             node: *child,
-            size: child_style.suggested_size().maybe_resolve(constants.node_inner_size),
-            min_size: child_style.min_size().maybe_resolve(constants.node_inner_size),
-            max_size: child_style.max_size().maybe_resolve(constants.node_inner_size),
+            // size: child_style.suggested_size().maybe_resolve(constants.node_inner_size),
+            // min_size: child_style.min_size().maybe_resolve(constants.node_inner_size),
+            // max_size: child_style.max_size().maybe_resolve(constants.node_inner_size),
+            constraints: child_style.size_constraints.maybe_resolve(constants.node_inner_size),
             
 
             position: child_style.position.zip_size(constants.node_inner_size, |p, s| p.maybe_resolve(s)),
@@ -554,7 +552,8 @@ fn determine_flex_base_size(
         //    flex item’s cross size. The flex base size is the item’s resulting main size.
 
         let child_known_dimensions = {
-            let mut ckd = child.size;
+            //    let mut ckd = child.constraints.suggested();
+            let mut ckd = child.constraints.suggested();
             if child_style.align_self(tree.style(node)) == AlignSelf::Stretch {
                 if constants.is_column && ckd.width.is_none() {
                     ckd.width = available_space.width.into_option();
@@ -569,13 +568,13 @@ fn determine_flex_base_size(
         child.flex_basis = compute_node_layout(
             tree,
             child.node,
-            child_known_dimensions.maybe_min(child.max_size),
+            child_known_dimensions.maybe_min(child.constraints.max()),
             available_space,
             RunMode::ComputeSize,
             SizingMode::ContentSize,
         )
         .main(constants.dir)
-        .maybe_min(child.max_size.main(constants.dir));
+        .maybe_min(child.constraints.max().main(constants.dir));
     }
 
     // The hypothetical main size is the item’s flex base size clamped according to its
@@ -598,12 +597,12 @@ fn determine_flex_base_size(
             SizingMode::ContentSize,
         )
         .main(constants.dir)
-        .maybe_clamp(child.min_size.main(constants.dir), child.size.main(constants.dir))
+        .maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.suggested().main(constants.dir))
         .into();
 
         child
             .hypothetical_inner_size
-            .set_main(constants.dir, child.flex_basis.maybe_clamp(min_main, child.max_size.main(constants.dir)));
+            .set_main(constants.dir, child.flex_basis.maybe_clamp(min_main, child.constraints.max().main(constants.dir)));
 
         child.hypothetical_outer_size.set_main(
             constants.dir,
@@ -719,13 +718,13 @@ fn resolve_flexible_lengths(
                 compute_node_layout(
                     tree,
                     child.node,
-                    child.size.maybe_clamp(child.min_size, child.max_size),
+                    child.constraints.suggested().maybe_clamp(child.constraints.min(), child.constraints.max()),
                     available_space,
                     RunMode::ComputeSize,
                     SizingMode::ContentSize,
                 )
                 .main(constants.dir)
-                .maybe_clamp(child.min_size.main(constants.dir), child.max_size.main(constants.dir)),
+                .maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.max().main(constants.dir)),
             );
         } else {
             child.target_size.set_main(constants.dir, child.hypothetical_inner_size.main(constants.dir));
@@ -875,13 +874,13 @@ fn resolve_flexible_lengths(
                     SizingMode::ContentSize,
                 )
                 .width
-                .maybe_clamp(child.min_size.width, child.size.width)
+                .maybe_clamp(child.constraints.min().width, child.constraints.suggested().width)
                 .into()
             } else {
-                child.min_size.main(constants.dir)
+                child.constraints.min().main(constants.dir)
             };
 
-            let max_main = child.max_size.main(constants.dir);
+            let max_main = child.constraints.max().main(constants.dir);
             let clamped = child.target_size.main(constants.dir).maybe_clamp(min_main, max_main).max(0.0);
             child.violation = clamped - child.target_size.main(constants.dir);
             child.target_size.set_main(constants.dir, clamped);
@@ -929,9 +928,10 @@ fn determine_hypothetical_cross_size(
 ) {
     for child in line.items.iter_mut() {
         let child_cross = child
-            .size
+            //.size
+            .constraints.suggested()
             .cross(constants.dir)
-            .maybe_clamp(child.min_size.cross(constants.dir), child.max_size.cross(constants.dir));
+            .maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir));
 
         child.hypothetical_inner_size.set_cross(
             constants.dir,
@@ -958,7 +958,7 @@ fn determine_hypothetical_cross_size(
                 SizingMode::ContentSize,
             )
             .cross(constants.dir)
-            .maybe_clamp(child.min_size.cross(constants.dir), child.max_size.cross(constants.dir)),
+            .maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir)),
         );
 
         child.hypothetical_outer_size.set_cross(
@@ -1162,7 +1162,7 @@ fn determine_used_cross_size(
                     && child_style.cross_size(constants.dir) == Dimension::Auto
                 {
                     (line_cross_size - child.margin.cross_axis_sum(constants.dir))
-                        .maybe_clamp(child.min_size.cross(constants.dir), child.max_size.cross(constants.dir))
+                        .maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir))
                 } else {
                     child.hypothetical_inner_size.cross(constants.dir)
                 },

@@ -1,5 +1,7 @@
 //! A representation of [CSS layout properties](https://css-tricks.com/snippets/css/a-guide-to-flexbox/) in Rust, used for flexbox layout
 
+use core::default;
+
 use crate::geometry::{Rect, Size};
 
 /// How [`Nodes`](crate::node::Node) are aligned relative to the cross axis
@@ -265,6 +267,77 @@ pub struct Constraints<T> {
     pub max: T,
 }
 
+pub trait ConstraintDefault {
+    fn default_constraint() -> Self;
+}
+
+impl ConstraintDefault for Dimension {
+    #[inline]
+    fn default_constraint() -> Self {
+        Dimension::Auto
+    }
+}
+
+impl ConstraintDefault for Option<f32> {
+    #[inline]
+    fn default_constraint() -> Self {
+        None
+    }
+}
+
+impl <T> Constraints<T> where T: ConstraintDefault + Copy {
+    #[inline]
+    pub fn default_constraints() -> Self {
+        Self {
+            min: T::default_constraint(),
+            suggested: T::default_constraint(),
+            max: T::default_constraint(),
+        }
+    }
+
+    #[inline]
+    pub fn min(min: T) -> Self {
+        Self {
+            min,
+            .. Self::default_constraints()
+        }
+    }
+
+    #[inline]
+    pub fn suggested(suggested: T) -> Self {
+        Self {
+            suggested,
+            .. Self::default_constraints()
+        }
+    }
+
+    #[inline]
+    pub fn max(max: T) -> Self {
+        Self {
+            max,
+            .. Self::default_constraints()
+        }
+    }
+
+    #[inline]
+    pub fn get(&self, constraint: Constraint) -> T {
+        match constraint {
+            Constraint::Min => self.min,
+            Constraint::Suggested => self.suggested,
+            Constraint::Max => self.max,
+        }
+    }
+
+    #[inline]
+    pub fn from_constraint(constraint: Constraint, dimension: T) -> Self {
+        match constraint {
+            Constraint::Min => Constraints::min(dimension),
+            Constraint::Suggested => Constraints::suggested(dimension),
+            Constraint::Max => Constraints::max(dimension),
+        }
+    }
+}
+
 
 impl Constraints<Dimension> {
     pub const DEFAULT: Self = Self {
@@ -295,46 +368,27 @@ impl Constraints<Dimension> {
         ..Self::DEFAULT
     };
 
-    pub const fn min(min: Dimension) -> Self {
-        Self {
-            min,
-            ..Self::DEFAULT
-        }
-    }
-
-    pub const fn suggested(suggested: Dimension) -> Self {
-        Self {
-            suggested,
-            ..Self::DEFAULT
-        }
-    }
-
-    pub const fn max(max: Dimension) -> Self {
-        Self {
-            max,
-            ..Self::DEFAULT
-        }
-    }
+    
 
     pub const fn has_min_or_max(&self) -> bool {
         self.min.is_defined() || self.max.is_defined()
     }
 
-    pub const fn get(&self, constraint: Constraint) -> Dimension {
-        match constraint {
-            Constraint::Min => self.min,
-            Constraint::Suggested => self.suggested,
-            Constraint::Max => self.max,
-        }
-    }
+    // pub const fn get(&self, constraint: Constraint) -> Dimension {
+    //     match constraint {
+    //         Constraint::Min => self.min,
+    //         Constraint::Suggested => self.suggested,
+    //         Constraint::Max => self.max,
+    //     }
+    // }
 
-    pub const fn from_constraint(constraint: Constraint, dimension: Dimension) -> Self {
-        match constraint {
-            Constraint::Min => Constraints::min(dimension),
-            Constraint::Suggested => Constraints::suggested(dimension),
-            Constraint::Max => Constraints::max(dimension),
-        }
-    }
+    // pub const fn from_constraint(constraint: Constraint, dimension: Dimension) -> Self {
+    //     match constraint {
+    //         Constraint::Min => Constraints::min(dimension),
+    //         Constraint::Suggested => Constraints::suggested(dimension),
+    //         Constraint::Max => Constraints::max(dimension),
+    //     }
+    // }
 }
 
 
@@ -509,6 +563,7 @@ pub struct Style {
     pub flex_shrink: f32,
     /// Sets the initial main axis size of the item
     pub flex_basis: Dimension,
+    /// constraints on the size of the item
     pub size_constraints: Size<Constraints<Dimension>>,
     /// Sets the preferred aspect ratio for the item
     ///
@@ -673,19 +728,23 @@ impl Style {
         }
     }
 
-    pub(crate) const fn size_constraint(&self, constraint: Constraint) -> Size<Dimension> {
+    #[inline]
+    pub(crate) fn size_constraint(&self, constraint: Constraint) -> Size<Dimension> {
         self.size_constraints.get(constraint)
     }
 
-    pub const fn min_size(&self) -> Size<Dimension> {
+    #[inline]
+    pub fn min_size(&self) -> Size<Dimension> {
         self.size_constraint(Constraint::Min)
     }
 
-    pub const fn suggested_size(&self) -> Size<Dimension> {
+    #[inline]
+    pub fn suggested_size(&self) -> Size<Dimension> {
         self.size_constraint(Constraint::Suggested)
     }
 
-    pub const fn max_size(&self) -> Size<Dimension> {
+    #[inline]
+    pub fn max_size(&self) -> Size<Dimension> {
         self.size_constraint(Constraint::Max)
     }
 }
