@@ -1,6 +1,6 @@
 //! Computes size using styles and measure functions
 
-use crate::geometry::Size;
+use crate::geometry::{Size, MaybeSet};
 use crate::layout::{AvailableSpace, RunMode, SizingMode};
 use crate::math::ApplyConstraints;
 use crate::node::Node;
@@ -52,11 +52,7 @@ pub(crate) fn compute(
     };
 
     if tree.needs_measure(node) {
-        // Compute available space
-        let available_space = Size {
-                width: available_space.width.maybe_set(node_constraints.suggested().width),
-                height: available_space.height.maybe_set(node_constraints.suggested().height),
-            };
+        let available_space = available_space.maybe_set(node_constraints.suggested());
 
         // Measure node
         let measured_size = tree.measure_node(node, known_dimensions, available_space);

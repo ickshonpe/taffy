@@ -586,6 +586,10 @@ impl <T> Axis<Constraints<T>> where T: Copy {
     }
 }
 
+pub trait MaybeSet<T> {
+    fn maybe_set(self, value: T) -> Self;
+}
+
 #[cfg(test)] 
 mod tests {
     pub fn constraints_from_height() {
