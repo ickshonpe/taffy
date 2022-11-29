@@ -27,49 +27,6 @@ pub(crate) trait MaybeMath<In, Out> {
     fn maybe_sub(self, rhs: In) -> Out;
 }
 
-// doesn't make sense to implement this maybe?
-// impl MaybeMath<Option<f32>, Constraints<Option<f32>>> for Constraints<Option<f32>> {
-//     fn maybe_min(self, rhs: Option<f32>) -> Constraints<Option<f32>> {
-//         Constraints { 
-//             min: self.min.maybe_min(rhs), 
-//             suggested: self.suggested.maybe_min(rhs), 
-//             max: self.max.maybe_min(rhs) 
-//         }
-//     }
-
-//     fn maybe_max(self, rhs: Option<f32>) -> Constraints<Option<f32>> {
-//         Constraints { 
-//             min: self.min.maybe_max(rhs), 
-//             suggested: self.suggested.maybe_max(rhs), 
-//             max: self.max.maybe_max(rhs) 
-//         }
-//     }
-
-//     fn maybe_clamp(self, min: Option<f32>, max: Option<f32>) -> Constraints<Option<f32>> {
-//         Constraints { 
-//             min: self.min.maybe_clamp(min, max), 
-//             suggested: self.suggested.maybe_clamp(min, max), 
-//             max: self.max.maybe_clamp(min, max) 
-//         }
-//     }
-
-//     fn maybe_add(self, rhs: Option<f32>) -> Constraints<Option<f32>> {
-//         Constraints { 
-//             min: self.min.maybe_add(rhs), 
-//             suggested: self.suggested.maybe_add(rhs), 
-//             max: self.suggested.maybe_add(rhs) 
-//         }
-//     }
-
-//     fn maybe_sub(self, rhs: Option<f32>) -> Constraints<Option<f32>> {
-//         Constraints { 
-//             min: self.min.maybe_sub(rhs), 
-//             suggested: self.suggested.maybe_sub(rhs), 
-//             max: self.suggested.maybe_sub(rhs) 
-//         }
-//     }
-// }
-
 impl MaybeMath<Option<f32>, Option<f32>> for Option<f32> {
     fn maybe_min(self, rhs: Option<f32>) -> Option<f32> {
         match (self, rhs) {
@@ -227,11 +184,6 @@ impl MaybeMath<Size<Option<f32>>, Axis<f32>> for Axis<f32> {
     }
 
     fn maybe_clamp(self, min: Size<Option<f32>>, max: Size<Option<f32>>) -> Axis<f32> {
-        // self.with_size(
-        //     min,
-        //     |inner, min| 
-        //         self.with_size(|inner, max| maybe_clamp(inner, min, max))
-        // )
         self.pair(min).pair(max)
         .with_inner(|((size, min), max)| size.maybe_clamp(min, max))
     }

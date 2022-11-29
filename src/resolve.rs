@@ -53,14 +53,6 @@ impl MaybeResolve<f32, Option<f32>> for Dimension {
 }
 
 
-// pub(crate) fn maybe_resolve(&self, node_inner_size: Size<Option<f32>>) -> Size<Option<f32>> {
-//     todo!()
-// }
-
-// pub(crate) fn maybe_resolve(&self, dir: AxisSize<Option<f32>>) -> Size<Option<f32>> {
-//     todo!()
-// }
-
 impl MaybeResolve<Size<Option<f32>>, Axis<Option<f32>>> for Axis<Dimension> {
     fn maybe_resolve(self, context: Size<Option<f32>>) -> Axis<Option<f32>> {
         self.pair(context).with_inner(|(d, s)| {

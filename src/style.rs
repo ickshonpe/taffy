@@ -836,20 +836,6 @@ mod tests {
             Style { align_self: align, ..Default::default() }
         }
 
-        // #[test]
-        // fn flexbox_layout_min_main_size() {
-        //     let layout = Style { min_size: Size::from_points(1.0, 2.0), ..Default::default() };
-        //     assert_eq!(layout.min_main_size(FlexDirection::Row), Dimension::Points(1.0));
-        //     assert_eq!(layout.min_main_size(FlexDirection::Column), Dimension::Points(2.0));
-        // }
-
-        // #[test]
-        // fn flexbox_layout_max_main_size() {
-        //     let layout = Style { max_size: Size::from_points(1.0, 2.0), ..Default::default() };
-        //     assert_eq!(layout.max_main_size(FlexDirection::Row), Dimension::Points(1.0));
-        //     assert_eq!(layout.max_main_size(FlexDirection::Column), Dimension::Points(2.0));
-        // }
-
         #[test]
         fn flexbox_layout_min_main_size() {
             let layout = Style { size_constraints: Size::min_from_points(1.0, 2.0), ..Default::default() };
@@ -878,27 +864,6 @@ mod tests {
             assert_eq!(layout.main_margin_end(FlexDirection::Row), Dimension::Points(2.0));
             assert_eq!(layout.main_margin_end(FlexDirection::Column), Dimension::Points(1.0));
         }
-
-        // #[test]
-        // fn flexbox_layout_cross_size() {
-        //     let layout = Style { size: Size::from_points(1.0, 2.0), ..Default::default() };
-        //     assert_eq!(layout.cross_size(FlexDirection::Row), Dimension::Points(2.0));
-        //     assert_eq!(layout.cross_size(FlexDirection::Column), Dimension::Points(1.0));
-        // }
-
-        // #[test]
-        // fn flexbox_layout_min_cross_size() {
-        //     let layout = Style { min_size: Size::from_points(1.0, 2.0), ..Default::default() };
-        //     assert_eq!(layout.min_cross_size(FlexDirection::Row), Dimension::Points(2.0));
-        //     assert_eq!(layout.min_cross_size(FlexDirection::Column), Dimension::Points(1.0));
-        // }
-
-        // #[test]
-        // fn flexbox_layout_max_cross_size() {
-        //     let layout = Style { max_size: Size::from_points(1.0, 2.0), ..Default::default() };
-        //     assert_eq!(layout.max_cross_size(FlexDirection::Row), Dimension::Points(2.0));
-        //     assert_eq!(layout.max_cross_size(FlexDirection::Column), Dimension::Points(1.0));
-        // }
 
         #[test]
         fn flexbox_layout_cross_size() {

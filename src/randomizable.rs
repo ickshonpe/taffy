@@ -45,16 +45,6 @@ impl Randomizeable for Size<Dimension> {
     }
 }
 
-// impl Randomizeable for Style {
-//     fn random<R>(rng: &mut R) -> Self
-//     where
-//         R: Rng,
-//     {
-//         // TODO: Add more attributes
-//         Style { size: Size::<Dimension>::random(rng), ..Default::default() }
-//     }
-// }
-
 impl Randomizeable for Size<Constraints<Dimension>> {
     fn random<R>(rng: &mut R) -> Self
     where

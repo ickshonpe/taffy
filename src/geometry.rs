@@ -392,21 +392,7 @@ impl Size<Constraints<Dimension>> {
     pub const AUTO_CONSTRAINTS: Size<Constraints<Dimension>> = Self { width: Constraints::AUTO, height: Constraints::AUTO };
     pub const UNDEFINED_CONSTRAINTS: Size<Constraints<Dimension>> = Self { width: Constraints::UNDEFINED, height: Constraints::UNDEFINED };
 
-    // pub const fn direction(&self, direction: FlexDirection) -> DimensionConstraints {
-    //     if direction.is_row() {
-    //         self.width
-    //     } else {
-    //         self.height
-    //     }
-    // }
 
-    // pub const fn cross(&self, direction: FlexDirection) -> DimensionConstraints {
-    //     if direction.is_row() {
-    //         self.height
-    //     } else {
-    //         self.width
-    //     }
-    // }
     #[inline]
     pub fn min_from(min: Size<Dimension>) -> Size<Constraints<Dimension>> {
         Size {
@@ -589,11 +575,3 @@ impl <T> Axis<Constraints<T>> where T: Copy {
 pub trait MaybeSet<T> {
     fn maybe_set(self, value: T) -> Self;
 }
-
-#[cfg(test)] 
-mod tests {
-    pub fn constraints_from_height() {
-    }
-
-}
-

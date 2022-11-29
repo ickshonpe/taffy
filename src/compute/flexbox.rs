@@ -22,12 +22,7 @@ struct FlexItem {
     /// The identifier for the associated [`Node`](crate::node::Node)
     node: Node,
 
-    /// The base size of this item
-    // size: Size<Option<f32>>,
-    // /// The minimum allowable size of this item
-    // min_size: Size<Option<f32>>,
-    // /// The maximum allowable size of this item
-    // max_size: Size<Option<f32>>,
+    /// Size Constraints of this item
     constraints: Size<Constraints<Option<f32>>>,
 
     /// The final offset of this item
@@ -1730,11 +1725,6 @@ fn perform_absolute_layout_on_absolute_children(tree: &mut impl LayoutTree, node
         let (start_cross, end_cross) = if constants.is_row { (top, bottom) } else { (start, end) };
 
         // Compute known dimensions from min/max/inherent size styles
-        // let style_size = child_style.suggested_size().maybe_resolve(constants.container_size);
-        // let min_size = child_style.min_size().maybe_resolve(constants.container_size);
-        // let max_size = child_style.max_size().maybe_resolve(constants.container_size);
-        // let mut known_dimensions = style_size.maybe_clamp(min_size, max_size);
-        
         let mut known_dimensions = child_style.size_constraints
             .maybe_resolve(constants.container_size)
             .clamp_suggested();
