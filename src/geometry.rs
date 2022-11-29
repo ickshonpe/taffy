@@ -17,6 +17,12 @@ impl <T> Clone for Axis<T> where T: Clone {
     }
 }
 
+pub trait TwoDimensional<T> {
+    fn width(&self) -> Axis<T>;
+    fn height(&self) -> Axis<T>;
+}
+
+
 impl <T> Copy for Axis<T> where T: Copy {}
 
 impl <T> Axis<T> {
@@ -54,10 +60,17 @@ impl <T> Axis<T> {
         }
     }
 
-    pub fn pair<U>(self, size: Size<U>) -> Axis<(T, U)> {
+    pub fn pair_size<U>(self, size: Size<U>) -> Axis<(T, U)> {
         match self {
             Axis::Width(width) => Axis::Width((width, size.width)),
             Axis::Height(height) => Axis::Height((height, size.height))
+        }
+    }
+
+    pub fn pair<U>(self, other: impl TwoDimensional<U>) -> Axis<(T, U)> {
+        match self {
+            Axis::Width(width) => Axis::Width((width, other.width().value())),
+            Axis::Height(height) => Axis::Height((height, other.height().value())),
         }
     }
 }
@@ -207,6 +220,29 @@ impl Rect<f32> {
         Self { left: start, right: end, top, bottom }
     }
 }
+
+pub struct AxisSummer<'a, T>(pub &'a Rect<T>) where T: Add<Output = T> + Copy + Clone;
+
+impl <'a, T> TwoDimensional<T> for AxisSummer<'a, T> where T: Add<Output = T> + Copy + Clone {
+    fn width(&self) -> Axis<T> {
+        Axis::Width(self.0.horizontal_axis_sum())
+    }
+
+    fn height(&self) -> Axis<T> {
+        Axis::Height(self.0.vertical_axis_sum())
+    }
+}
+
+impl<T> Rect<T>
+where
+    T: Add<Output = T> + Copy + Clone,
+{
+    pub fn axis_sum(&self) -> AxisSummer<T> {
+        AxisSummer(self)
+    }
+}
+
+
 
 /// The width and height of a [`Rect`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

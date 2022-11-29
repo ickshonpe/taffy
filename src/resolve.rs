@@ -55,7 +55,7 @@ impl MaybeResolve<f32, Option<f32>> for Dimension {
 
 impl MaybeResolve<Size<Option<f32>>, Axis<Option<f32>>> for Axis<Dimension> {
     fn maybe_resolve(self, context: Size<Option<f32>>) -> Axis<Option<f32>> {
-        self.pair(context).with_inner(|(d, s)| {
+        self.pair_size(context).with_inner(|(d, s)| {
             d.maybe_resolve(s)
         })
     }

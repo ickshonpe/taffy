@@ -1,9 +1,12 @@
 //! Contains numerical helper traits and functions
 #![allow(clippy::manual_clamp)]
 
+use core::ops::Add;
+use core::ops::Sub;
 use std::panic::panic_any;
 
 use crate::geometry::Axis;
+use crate::geometry::AxisSummer;
 use crate::geometry::Size;
 use crate::layout::AvailableSpace;
 use crate::style::Constraints;
@@ -170,34 +173,34 @@ impl MaybeMath<f32, Axis<Option<f32>>> for Axis<Option<f32>> {
     }
 }
 
-impl MaybeMath<Size<Option<f32>>, Axis<f32>> for Axis<f32> {
-    fn maybe_min(self, rhs: Size<Option<f32>>) -> Axis<f32> {
-        self.with_size(
-            rhs, 
-            |inner, other| inner.maybe_min(other)
-        )
-    }
+// impl MaybeMath<Size<Option<f32>>, Axis<f32>> for Axis<f32> {
+//     fn maybe_min(self, rhs: Size<Option<f32>>) -> Axis<f32> {
+//         self.with_size(
+//             rhs, 
+//             |inner, other| inner.maybe_min(other)
+//         )
+//     }
 
-    fn maybe_max(self, rhs: Size<Option<f32>>) -> Axis<f32> {
-        self.with_size(
-            rhs, 
-            |inner, other| inner.maybe_max(other)
-        )
-    }
+//     fn maybe_max(self, rhs: Size<Option<f32>>) -> Axis<f32> {
+//         self.with_size(
+//             rhs, 
+//             |inner, other| inner.maybe_max(other)
+//         )
+//     }
 
-    fn maybe_clamp(self, min: Size<Option<f32>>, max: Size<Option<f32>>) -> Axis<f32> {
-        self.pair(min).pair(max)
-        .with_inner(|((size, min), max)| size.maybe_clamp(min, max))
-    }
+//     fn maybe_clamp(self, min: Size<Option<f32>>, max: Size<Option<f32>>) -> Axis<f32> {
+//         self.pair(min).pair(max)
+//         .with_inner(|((size, min), max)| size.maybe_clamp(min, max))
+//     }
 
-    fn maybe_add(self, rhs: Size<Option<f32>>) -> Axis<f32> {
-        self.pair(rhs).with_inner(|(size, other)| size.maybe_add(other))
-    }
+//     fn maybe_add(self, rhs: Size<Option<f32>>) -> Axis<f32> {
+//         self.pair(rhs).with_inner(|(size, other)| size.maybe_add(other))
+//     }
 
-    fn maybe_sub(self, rhs: Size<Option<f32>>) -> Axis<f32> {
-        self.pair(rhs).with_inner(|(size, other)| size.maybe_sub(other))
-    }
-}
+//     fn maybe_sub(self, rhs: Size<Option<f32>>) -> Axis<f32> {
+//         self.pair(rhs).with_inner(|(size, other)| size.maybe_sub(other))
+//     }
+// }
 
 impl MaybeMath<f32, AvailableSpace> for AvailableSpace {
     fn maybe_min(self, rhs: f32) -> AvailableSpace {
@@ -288,6 +291,50 @@ impl MaybeMath<Option<f32>, AvailableSpace> for AvailableSpace {
     }
 }
 
+impl <T, U, V: MaybeMath<T, U>> MaybeMath<Size<T>, Axis<U>> for Axis<V> {
+    fn maybe_min(self, rhs: Size<T>) -> Axis<U> {
+        self.pair_size(rhs).with_inner(|(a, b)| a.maybe_min(b))
+    }
+
+    fn maybe_max(self, rhs: Size<T>) -> Axis<U> {
+        self.pair_size(rhs).with_inner(|(a, b)| a.maybe_max(b))
+    }
+
+    fn maybe_clamp(self, min: Size<T>, max: Size<T>) -> Axis<U> {
+        self.pair_size(min).pair_size(max)
+            .with_inner(|((x, min), max)| x.maybe_clamp(min, max))
+    }
+
+    fn maybe_add(self, rhs: Size<T>) -> Axis<U> {
+        self.pair_size(rhs).with_inner(|(a, b)| a.maybe_add(b))
+    }
+
+    fn maybe_sub(self, rhs: Size<T>) -> Axis<U> {
+        self.pair_size(rhs).with_inner(|(a, b)| a.maybe_sub(b))
+    }
+}
+
+impl <T, U, V> MaybeMath<AxisSummer<'_, T>, Axis<U>> for Axis<V> where T: Add<Output = T> + Copy + Clone, V: MaybeMath<T, U> {
+    fn maybe_min(self, rhs: AxisSummer<T>) -> Axis<U> {
+        todo!()
+    }
+
+    fn maybe_max(self, rhs: AxisSummer<T>) -> Axis<U> {
+        todo!()
+    }
+
+    fn maybe_clamp(self, min: AxisSummer<T>, max: AxisSummer<T>) -> Axis<U> {
+        todo!()
+    }
+
+    fn maybe_add(self, rhs: AxisSummer<T>) -> Axis<U> {
+        self.pair(rhs).with_inner(|(a, s)| a.maybe_add(s))
+    }
+
+    fn maybe_sub(self, rhs: AxisSummer<T>) -> Axis<U> where  {
+        self.pair(rhs).with_inner(|(a, s)| a.maybe_sub(s))
+    }
+}
 
 
 impl<In, Out, T: MaybeMath<In, Out>> MaybeMath<Size<In>, Size<Out>> for Size<T> {

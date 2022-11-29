@@ -447,20 +447,24 @@ fn determine_available_space(
     outer_available_space: Size<AvailableSpace>,
     constants: &AlgoConstants,
 ) -> Size<AvailableSpace> {
+    
+
     let width = match known_dimensions.width {
         Some(node_width) => AvailableSpace::Definite(node_width),
         None => outer_available_space
-            .width
-            .maybe_sub(constants.margin.horizontal_axis_sum())
-            .maybe_sub(constants.padding_border.horizontal_axis_sum()),
+            .width()
+            .maybe_sub(constants.margin.axis_sum())
+            .maybe_sub(constants.padding_border.axis_sum())
+            .value(),
     };
 
     let height = match known_dimensions.height {
         Some(node_height) => AvailableSpace::Definite(node_height),
         None => outer_available_space
-            .height
-            .maybe_sub(constants.margin.vertical_axis_sum())
-            .maybe_sub(constants.padding_border.vertical_axis_sum()),
+            .height()
+            .maybe_sub(constants.margin.axis_sum())
+            .maybe_sub(constants.padding_border.axis_sum())
+            .value(),
     };
 
     Size { width, height }
