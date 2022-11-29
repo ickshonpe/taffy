@@ -150,13 +150,13 @@ impl Default for FlexDirection {
 impl FlexDirection {
     #[inline]
     /// Is the direction [`FlexDirection::Row`] or [`FlexDirection::RowReverse`]?
-    pub(crate) fn is_row(self) -> bool {
+    pub(crate) const fn is_row(self) -> bool {
         matches!(self, Self::Row | Self::RowReverse)
     }
 
     #[inline]
     /// Is the direction [`FlexDirection::Column`] or [`FlexDirection::ColumnReverse`]?
-    pub(crate) fn is_column(self) -> bool {
+    pub(crate) const fn is_column(self) -> bool {
         matches!(self, Self::Column | Self::ColumnReverse)
     }
 
@@ -249,6 +249,95 @@ impl Default for FlexWrap {
     }
 }
 
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub enum Constraint {
+    Min,
+    Suggested,
+    Max,
+}
+
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Constraints<T> {
+    pub min: T,
+    pub suggested: T,
+    pub max: T,
+}
+
+
+impl Constraints<Dimension> {
+    pub const DEFAULT: Self = Self {
+        min: Dimension::Auto,
+        suggested: Dimension::Auto,
+        max: Dimension::Auto,
+    };
+ 
+    //pub const DEFAULT: Self = Self::AUTO;
+
+    pub const FULL: Self = Self {
+        suggested: Dimension::Percent(100.),
+        max: Dimension::Percent(100.),
+        ..Self::DEFAULT
+    };
+
+    pub const AUTO: Self = Self {
+        min: Dimension::Auto,
+        suggested: Dimension::Auto,
+        max: Dimension::Auto,
+        ..Self::DEFAULT
+    };
+
+    pub const UNDEFINED: Self = Self {
+        min: Dimension::Undefined,
+        suggested: Dimension::Undefined,
+        max: Dimension::Undefined,
+        ..Self::DEFAULT
+    };
+
+    pub const fn min(min: Dimension) -> Self {
+        Self {
+            min,
+            ..Self::DEFAULT
+        }
+    }
+
+    pub const fn suggested(suggested: Dimension) -> Self {
+        Self {
+            suggested,
+            ..Self::DEFAULT
+        }
+    }
+
+    pub const fn max(max: Dimension) -> Self {
+        Self {
+            max,
+            ..Self::DEFAULT
+        }
+    }
+
+    pub const fn has_min_or_max(&self) -> bool {
+        self.min.is_defined() || self.max.is_defined()
+    }
+
+    pub const fn get(&self, constraint: Constraint) -> Dimension {
+        match constraint {
+            Constraint::Min => self.min,
+            Constraint::Suggested => self.suggested,
+            Constraint::Max => self.max,
+        }
+    }
+
+    pub const fn from_constraint(constraint: Constraint, dimension: Dimension) -> Self {
+        match constraint {
+            Constraint::Min => Constraints::min(dimension),
+            Constraint::Suggested => Constraints::suggested(dimension),
+            Constraint::Max => Constraints::max(dimension),
+        }
+    }
+}
+
+
 /// A unit of linear measurement
 ///
 /// This is commonly combined with [`Rect`], [`Point`](crate::geometry::Point) and [`Size<T>`].
@@ -276,7 +365,8 @@ impl Default for Dimension {
 
 impl Dimension {
     /// Is this value defined?
-    pub(crate) fn is_defined(self) -> bool {
+    #[inline]
+    pub(crate) const fn is_defined(self) -> bool {
         matches!(self, Dimension::Points(_) | Dimension::Percent(_))
     }
 }
@@ -358,6 +448,12 @@ impl Default for Size<Dimension> {
     }
 }
 
+impl Default for Size<Constraints<Dimension>> {
+    fn default() -> Self {
+        Size::AUTO_CONSTRAINTS
+    }
+}
+
 /// The flexbox layout information for a single [`Node`](crate::node::Node).
 ///
 /// The most important idea in flexbox is the notion of a "main" and "cross" axis, which are always perpendicular to each other.
@@ -413,13 +509,7 @@ pub struct Style {
     pub flex_shrink: f32,
     /// Sets the initial main axis size of the item
     pub flex_basis: Dimension,
-    /// Sets the initial size of the item
-    // TODO: why does this exist as distinct from flex_basis? How do they interact?
-    pub size: Size<Dimension>,
-    /// Controls the minimum size of the item
-    pub min_size: Size<Dimension>,
-    /// Controls the maximum size of the item
-    pub max_size: Size<Dimension>,
+    pub size_constraints: Size<Constraints<Dimension>>,
     /// Sets the preferred aspect ratio for the item
     ///
     /// The ratio is calculated as width divided by height.
@@ -445,9 +535,7 @@ impl Style {
         flex_grow: 0.0,
         flex_shrink: 1.0,
         flex_basis: Dimension::Auto,
-        size: Size::AUTO,
-        min_size: Size::AUTO,
-        max_size: Size::AUTO,
+        size_constraints: Size::AUTO_CONSTRAINTS,
         aspect_ratio: None,
     };
 }
@@ -459,22 +547,34 @@ impl Default for Style {
 }
 
 impl Style {
-    /// If the `direction` is row-oriented, the min width. Otherwise the min height
-    pub(crate) fn min_main_size(&self, direction: FlexDirection) -> Dimension {
-        if direction.is_row() {
-            self.min_size.width
-        } else {
-            self.min_size.height
-        }
+    // /// If the `direction` is row-oriented, the min width. Otherwise the min height
+    // pub(crate) fn min_main_size(&self, direction: FlexDirection) -> Dimension {
+    //     if direction.is_row() {
+    //         self.min_size.width
+    //     } else {
+    //         self.min_size.height
+    //     }
+    // }
+
+    // /// If the `direction` is row-oriented, the max width. Otherwise the max height
+    // pub(crate) fn max_main_size(&self, direction: FlexDirection) -> Dimension {
+    //     if direction.is_row() {
+    //         self.max_size.width
+    //     } else {
+    //         self.max_size.height
+    //     }
+    // }
+
+
+     /// If the `direction` is row-oriented, the min width. Otherwise the min height
+     pub(crate) fn min_main_size(&self, direction: FlexDirection) -> Dimension {
+        self.size_constraints.main(direction).min
     }
+
 
     /// If the `direction` is row-oriented, the max width. Otherwise the max height
     pub(crate) fn max_main_size(&self, direction: FlexDirection) -> Dimension {
-        if direction.is_row() {
-            self.max_size.width
-        } else {
-            self.max_size.height
-        }
+        self.size_constraints.main(direction).max
     }
 
     /// If the `direction` is row-oriented, the margin start. Otherwise the margin top
@@ -495,31 +595,46 @@ impl Style {
         }
     }
 
-    /// If the `direction` is row-oriented, the height. Otherwise the width
-    pub(crate) fn cross_size(&self, direction: FlexDirection) -> Dimension {
-        if direction.is_row() {
-            self.size.height
-        } else {
-            self.size.width
-        }
+    // /// If the `direction` is row-oriented, the height. Otherwise the width
+    // pub(crate) fn cross_size(&self, direction: FlexDirection) -> Dimension {
+    //     if direction.is_row() {
+    //         self.size.height
+    //     } else {
+    //         self.size.width
+    //     }
+    // }
+
+    // /// If the `direction` is row-oriented, the min height. Otherwise the min width
+    // pub(crate) fn min_cross_size(&self, direction: FlexDirection) -> Dimension {
+    //     if direction.is_row() {
+    //         self.min_size.height
+    //     } else {
+    //         self.min_size.width
+    //     }
+    // }
+
+    // /// If the `direction` is row-oriented, the max height. Otherwise the max width
+    // pub(crate) fn max_cross_size(&self, direction: FlexDirection) -> Dimension {
+    //     if direction.is_row() {
+    //         self.max_size.height
+    //     } else {
+    //         self.max_size.width
+    //     }
+    // }
+
+     /// If the `direction` is row-oriented, the height. Otherwise the width
+     pub(crate) fn cross_size(&self, direction: FlexDirection) -> Dimension {
+        self.size_constraints.cross(direction).suggested
     }
 
     /// If the `direction` is row-oriented, the min height. Otherwise the min width
     pub(crate) fn min_cross_size(&self, direction: FlexDirection) -> Dimension {
-        if direction.is_row() {
-            self.min_size.height
-        } else {
-            self.min_size.width
-        }
+        self.size_constraints.cross(direction).min
     }
 
     /// If the `direction` is row-oriented, the max height. Otherwise the max width
     pub(crate) fn max_cross_size(&self, direction: FlexDirection) -> Dimension {
-        if direction.is_row() {
-            self.max_size.height
-        } else {
-            self.max_size.width
-        }
+        self.size_constraints.cross(direction).max
     }
 
     /// If the `direction` is row-oriented, the margin top. Otherwise the margin start
@@ -557,6 +672,22 @@ impl Style {
             self.align_self
         }
     }
+
+    pub(crate) const fn size_constraint(&self, constraint: Constraint) -> Size<Dimension> {
+        self.size_constraints.get(constraint)
+    }
+
+    pub const fn min_size(&self) -> Size<Dimension> {
+        self.size_constraint(Constraint::Min)
+    }
+
+    pub const fn suggested_size(&self) -> Size<Dimension> {
+        self.size_constraint(Constraint::Suggested)
+    }
+
+    pub const fn max_size(&self) -> Size<Dimension> {
+        self.size_constraint(Constraint::Max)
+    }
 }
 
 #[allow(clippy::bool_assert_comparison)]
@@ -584,9 +715,7 @@ mod tests {
             flex_grow: 0.0,
             flex_shrink: 1.0,
             flex_basis: super::Dimension::Auto,
-            size: Default::default(),
-            min_size: Default::default(),
-            max_size: Default::default(),
+            size_constraints: Default::default(),
             aspect_ratio: Default::default(),
         };
 
@@ -633,19 +762,34 @@ mod tests {
             Style { align_self: align, ..Default::default() }
         }
 
+        // #[test]
+        // fn flexbox_layout_min_main_size() {
+        //     let layout = Style { min_size: Size::from_points(1.0, 2.0), ..Default::default() };
+        //     assert_eq!(layout.min_main_size(FlexDirection::Row), Dimension::Points(1.0));
+        //     assert_eq!(layout.min_main_size(FlexDirection::Column), Dimension::Points(2.0));
+        // }
+
+        // #[test]
+        // fn flexbox_layout_max_main_size() {
+        //     let layout = Style { max_size: Size::from_points(1.0, 2.0), ..Default::default() };
+        //     assert_eq!(layout.max_main_size(FlexDirection::Row), Dimension::Points(1.0));
+        //     assert_eq!(layout.max_main_size(FlexDirection::Column), Dimension::Points(2.0));
+        // }
+
         #[test]
         fn flexbox_layout_min_main_size() {
-            let layout = Style { min_size: Size::from_points(1.0, 2.0), ..Default::default() };
+            let layout = Style { size_constraints: Size::min_from_points(1.0, 2.0), ..Default::default() };
             assert_eq!(layout.min_main_size(FlexDirection::Row), Dimension::Points(1.0));
             assert_eq!(layout.min_main_size(FlexDirection::Column), Dimension::Points(2.0));
         }
 
         #[test]
         fn flexbox_layout_max_main_size() {
-            let layout = Style { max_size: Size::from_points(1.0, 2.0), ..Default::default() };
+            let layout = Style { size_constraints: Size::max_from_points(1.0, 2.0), ..Default::default() };
             assert_eq!(layout.max_main_size(FlexDirection::Row), Dimension::Points(1.0));
             assert_eq!(layout.max_main_size(FlexDirection::Column), Dimension::Points(2.0));
         }
+
 
         #[test]
         fn flexbox_layout_main_margin_start() {
@@ -661,23 +805,44 @@ mod tests {
             assert_eq!(layout.main_margin_end(FlexDirection::Column), Dimension::Points(1.0));
         }
 
+        // #[test]
+        // fn flexbox_layout_cross_size() {
+        //     let layout = Style { size: Size::from_points(1.0, 2.0), ..Default::default() };
+        //     assert_eq!(layout.cross_size(FlexDirection::Row), Dimension::Points(2.0));
+        //     assert_eq!(layout.cross_size(FlexDirection::Column), Dimension::Points(1.0));
+        // }
+
+        // #[test]
+        // fn flexbox_layout_min_cross_size() {
+        //     let layout = Style { min_size: Size::from_points(1.0, 2.0), ..Default::default() };
+        //     assert_eq!(layout.min_cross_size(FlexDirection::Row), Dimension::Points(2.0));
+        //     assert_eq!(layout.min_cross_size(FlexDirection::Column), Dimension::Points(1.0));
+        // }
+
+        // #[test]
+        // fn flexbox_layout_max_cross_size() {
+        //     let layout = Style { max_size: Size::from_points(1.0, 2.0), ..Default::default() };
+        //     assert_eq!(layout.max_cross_size(FlexDirection::Row), Dimension::Points(2.0));
+        //     assert_eq!(layout.max_cross_size(FlexDirection::Column), Dimension::Points(1.0));
+        // }
+
         #[test]
         fn flexbox_layout_cross_size() {
-            let layout = Style { size: Size::from_points(1.0, 2.0), ..Default::default() };
+            let layout = Style { size_constraints: Size::suggested_from(Size::from_points(1.0, 2.0)), ..Default::default() };
             assert_eq!(layout.cross_size(FlexDirection::Row), Dimension::Points(2.0));
             assert_eq!(layout.cross_size(FlexDirection::Column), Dimension::Points(1.0));
         }
 
         #[test]
         fn flexbox_layout_min_cross_size() {
-            let layout = Style { min_size: Size::from_points(1.0, 2.0), ..Default::default() };
+            let layout = Style { size_constraints: Size::min_from_points(1.0, 2.0), ..Default::default() };
             assert_eq!(layout.min_cross_size(FlexDirection::Row), Dimension::Points(2.0));
             assert_eq!(layout.min_cross_size(FlexDirection::Column), Dimension::Points(1.0));
         }
 
         #[test]
         fn flexbox_layout_max_cross_size() {
-            let layout = Style { max_size: Size::from_points(1.0, 2.0), ..Default::default() };
+            let layout = Style { size_constraints: Size::max_from_points(1.0, 2.0) , ..Default::default() };
             assert_eq!(layout.max_cross_size(FlexDirection::Row), Dimension::Points(2.0));
             assert_eq!(layout.max_cross_size(FlexDirection::Column), Dimension::Points(1.0));
         }

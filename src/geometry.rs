@@ -1,6 +1,6 @@
 //! Geometric primitives useful for layout
 
-use crate::style::{Dimension, FlexDirection};
+use crate::style::{Dimension, FlexDirection, Constraints, Constraint};
 use core::ops::Add;
 
 /// An axis-aligned UI rectangle
@@ -301,4 +301,170 @@ pub struct Point<T> {
 impl Point<f32> {
     /// A [`Point`] with values (0,0), representing the origin
     pub const ZERO: Point<f32> = Self { x: 0.0, y: 0.0 };
+}
+
+
+impl Size<Constraints<Dimension>> {    
+    pub const AUTO_CONSTRAINTS: Size<Constraints<Dimension>> = Self { width: Constraints::AUTO, height: Constraints::AUTO };
+    pub const UNDEFINED_CONSTRAINTS: Size<Constraints<Dimension>> = Self { width: Constraints::UNDEFINED, height: Constraints::UNDEFINED };
+
+    // pub const fn direction(&self, direction: FlexDirection) -> DimensionConstraints {
+    //     if direction.is_row() {
+    //         self.width
+    //     } else {
+    //         self.height
+    //     }
+    // }
+
+    // pub const fn cross(&self, direction: FlexDirection) -> DimensionConstraints {
+    //     if direction.is_row() {
+    //         self.height
+    //     } else {
+    //         self.width
+    //     }
+    // }
+
+    pub const fn min_from(min: Size<Dimension>) -> Size<Constraints<Dimension>> {
+        Size {
+            width: Constraints::min(min.width),
+            height: Constraints::min(min.height),
+            ..Size:: UNDEFINED_CONSTRAINTS
+        }
+    }
+
+    pub const fn suggested_from(suggested: Size<Dimension>) -> Size<Constraints<Dimension>> {
+        Size {
+            width: Constraints::suggested(suggested.width),
+            height: Constraints::suggested(suggested.height),
+            ..Size:: UNDEFINED_CONSTRAINTS
+        }
+    }
+
+    pub const fn max_from(max: Size<Dimension>) -> Size<Constraints<Dimension>> {
+        Size {
+            width: Constraints::max(max.width),
+            height: Constraints::max(max.height),
+            ..Size:: UNDEFINED_CONSTRAINTS
+        }
+    }
+
+    pub const fn min_from_points(width: f32, height: f32) -> Size<Constraints<Dimension>> {
+        Size::min_from(Size::from_points(width, height))
+    }
+
+    pub const fn max_from_points(width: f32, height: f32) -> Size<Constraints<Dimension>> {
+        Size::max_from(Size::from_points(width, height))
+    }
+
+    pub const fn suggested_from_points(width: f32, height: f32) -> Size<Constraints<Dimension>> {
+        Size::suggested_from(Size::from_points(width, height))
+    }
+
+    pub const fn min_from_percent(width: f32, height: f32) -> Size<Constraints<Dimension>> {
+        Size::min_from(Size::from_percent(width, height))
+    }
+
+    pub const fn max_from_percent(width: f32, height: f32) -> Size<Constraints<Dimension>> {
+        Size::max_from(Size::from_percent(width, height))
+    }
+
+    pub const fn suggested_from_percent(width: f32, height: f32) -> Size<Constraints<Dimension>> {
+        Size::suggested_from(Size::from_percent(width, height))
+    }
+    
+    pub const fn get(&self, constraint: Constraint) -> Size<Dimension> {
+        Size {
+            width: self.width.get(constraint),
+            height: self.height.get(constraint),
+        }
+    }
+
+    pub const fn min(&self) -> Size<Dimension> {
+        self.get(Constraint::Min)
+    }
+
+    pub const fn suggested(&self) -> Size<Dimension> {
+        self.get(Constraint::Suggested)
+    }
+
+    pub const fn max(&self) -> Size<Dimension> {
+        self.get(Constraint::Max)
+    }
+
+    pub const fn from_width(width: Constraints<Dimension>) -> Size<Constraints<Dimension>> {
+        Size {
+            width,
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn from_height(height: Constraints<Dimension>) -> Size<Constraints<Dimension>> {
+        Size {
+            height,
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn constraint_from_width(constraint: Constraint, width: Dimension) -> Size<Constraints<Dimension>> {
+        Size {
+            width: Constraints::from_constraint(constraint, width),
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn constraint_from_height(constraint: Constraint, width: Dimension) -> Size<Constraints<Dimension>> {
+        Size {
+            width: Constraints::from_constraint(constraint, width),
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn min_from_width(width: Dimension) -> Size<Constraints<Dimension>> {
+        Size {
+            width: Constraints::from_constraint(Constraint::Min, width),
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn min_from_height(height: Dimension) -> Size<Constraints<Dimension>> {
+        Size {
+            height: Constraints::from_constraint(Constraint::Min, height),
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn suggested_from_width(width: Dimension) -> Size<Constraints<Dimension>> {
+        Size {
+            width: Constraints::from_constraint(Constraint::Suggested, width),
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn suggested_from_height(height: Dimension) -> Size<Constraints<Dimension>> {
+        Size {
+            height: Constraints::from_constraint(Constraint::Suggested, height),
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn max_from_width(width: Dimension) -> Size<Constraints<Dimension>> {
+        Size {
+            width: Constraints::from_constraint(Constraint::Max, width),
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+
+    pub const fn max_from_height(height: Dimension) -> Size<Constraints<Dimension>> {
+        Size {
+            height: Constraints::from_constraint(Constraint::Max, height),
+            ..Size::AUTO_CONSTRAINTS
+        }
+    }
+}
+
+#[cfg(test)] 
+mod tests {
+    pub fn constraints_from_height() {
+    }
+
 }

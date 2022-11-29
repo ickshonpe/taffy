@@ -20,7 +20,6 @@ pub(crate) fn compute(
     sizing_mode: SizingMode,
 ) -> Size<f32> {
     let style = tree.style(node);
-
     // Resolve node's preferred/min/max sizes (width/heights) against the available space (percentages resolve to pixel values)
     // For ContentSize mode, we pretend that the node has no size styles as these should be ignored.
     let (node_size, node_min_size, node_max_size) = match sizing_mode {
@@ -31,10 +30,14 @@ pub(crate) fn compute(
             (node_size, node_min_size, node_max_size)
         }
         SizingMode::InherentSize => {
-            let style_size = style.size.maybe_resolve(available_space.as_options());
+            // let style_size = style.size.maybe_resolve(available_space.as_options());
+            // let node_size = known_dimensions.or(style_size);
+            // let node_min_size = style.min_size.maybe_resolve(available_space.as_options());
+            // let node_max_size = style.max_size.maybe_resolve(available_space.as_options());
+            let style_size = style.suggested_size().maybe_resolve(available_space.as_options());
             let node_size = known_dimensions.or(style_size);
-            let node_min_size = style.min_size.maybe_resolve(available_space.as_options());
-            let node_max_size = style.max_size.maybe_resolve(available_space.as_options());
+            let node_min_size = style.min_size().maybe_resolve(available_space.as_options());
+            let node_max_size = style.max_size().maybe_resolve(available_space.as_options());
             (node_size, node_min_size, node_max_size)
         }
     };

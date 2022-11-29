@@ -23,11 +23,12 @@ struct FlexItem {
     node: Node,
 
     /// The base size of this item
-    size: Size<Option<f32>>,
-    /// The minimum allowable size of this item
-    min_size: Size<Option<f32>>,
-    /// The maximum allowable size of this item
-    max_size: Size<Option<f32>>,
+    // size: Size<Option<f32>>,
+    // /// The minimum allowable size of this item
+    // min_size: Size<Option<f32>>,
+    // /// The maximum allowable size of this item
+    // max_size: Size<Option<f32>>,
+    size_constraints: Size<Option<f32>>,
 
     /// The final offset of this item
     position: Rect<Option<f32>>,
@@ -85,6 +86,7 @@ struct FlexLine<'a> {
 }
 
 /// Values that can be cached during the flexbox algorithm
+#[derive(Debug)]
 struct AlgoConstants {
     /// The direction of the current segment being laid out
     dir: FlexDirection,
@@ -121,15 +123,18 @@ pub fn compute(
     run_mode: RunMode,
 ) -> Size<f32> {
     let style = tree.style(node);
-    let has_min_max_sizes = style.min_size.width.is_defined()
-        || style.min_size.height.is_defined()
-        || style.max_size.width.is_defined()
-        || style.max_size.height.is_defined();
+    // let has_min_max_sizes = style.min_size.width.is_defined()
+    //     || style.min_size.height.is_defined()
+    //     || style.max_size.width.is_defined()
+    //     || style.max_size.height.is_defined();
+
+    let has_min_max_sizes = style.size_constraints.width.has_min_or_max()
+        || style.size_constraints.height.has_min_or_max();
 
     // Pull these out earlier to avoid borrowing issues
-    let min_size = style.min_size.maybe_resolve(known_dimensions);
-    let max_size = style.max_size.maybe_resolve(known_dimensions);
-    let clamped_style_size = style.size.maybe_resolve(known_dimensions).maybe_clamp(min_size, max_size);
+    let min_size = style.min_size().maybe_resolve(known_dimensions);
+    let max_size = style.max_size().maybe_resolve(known_dimensions);
+    let clamped_style_size = style.suggested_size().maybe_resolve(known_dimensions).maybe_clamp(min_size, max_size);
 
     if has_min_max_sizes {
         #[cfg(feature = "debug")]
@@ -398,11 +403,13 @@ fn generate_anonymous_flex_items(tree: &impl LayoutTree, node: Node, constants: 
         .map(|child| (child, tree.style(*child)))
         .filter(|(_, style)| style.position_type != PositionType::Absolute)
         .filter(|(_, style)| style.display != Display::None)
-        .map(|(child, child_style)| FlexItem {
+        .map(|(child, child_style)| {
+            FlexItem {
             node: *child,
-            size: child_style.size.maybe_resolve(constants.node_inner_size),
-            min_size: child_style.min_size.maybe_resolve(constants.node_inner_size),
-            max_size: child_style.max_size.maybe_resolve(constants.node_inner_size),
+            size: child_style.suggested_size().maybe_resolve(constants.node_inner_size),
+            min_size: child_style.min_size().maybe_resolve(constants.node_inner_size),
+            max_size: child_style.max_size().maybe_resolve(constants.node_inner_size),
+            
 
             position: child_style.position.zip_size(constants.node_inner_size, |p, s| p.maybe_resolve(s)),
             margin: child_style.margin.resolve_or_default(constants.node_inner_size.width),
@@ -422,7 +429,7 @@ fn generate_anonymous_flex_items(tree: &impl LayoutTree, node: Node, constants: 
 
             offset_main: 0.0,
             offset_cross: 0.0,
-        })
+        }})
         .collect()
 }
 
@@ -1699,9 +1706,9 @@ fn perform_absolute_layout_on_absolute_children(tree: &mut impl LayoutTree, node
         let (start_cross, end_cross) = if constants.is_row { (top, bottom) } else { (start, end) };
 
         // Compute known dimensions from min/max/inherent size styles
-        let style_size = child_style.size.maybe_resolve(constants.container_size);
-        let min_size = child_style.min_size.maybe_resolve(constants.container_size);
-        let max_size = child_style.max_size.maybe_resolve(constants.container_size);
+        let style_size = child_style.suggested_size().maybe_resolve(constants.container_size);
+        let min_size = child_style.min_size().maybe_resolve(constants.container_size);
+        let max_size = child_style.max_size().maybe_resolve(constants.container_size);
         let mut known_dimensions = style_size.maybe_clamp(min_size, max_size);
 
         // Fill in width from left/right and height from top/bottom is appropriate
@@ -1908,7 +1915,12 @@ mod tests {
     fn hidden_layout_should_hide_recursively() {
         let mut taffy = Taffy::new();
 
-        let style: Style = Style { display: Flex, size: Size::from_points(50.0, 50.0), ..Default::default() };
+        // let style: Style = Style { display: Flex, size: Size::from_points(50.0, 50.0), ..Default::default() };
+        let style: Style = Style { 
+            display: Flex, 
+            size_constraints: Size::suggested_from_points(50.0, 50.0), 
+            ..Default::default() 
+        };
 
         let grandchild_00 = taffy.new_leaf(style).unwrap();
 
@@ -1922,7 +1934,8 @@ mod tests {
 
         let root = taffy
             .new_with_children(
-                Style { display: Display::None, size: Size::from_points(50.0, 50.0), ..Default::default() },
+                //Style { display: Display::None, size: Size::from_points(50.0, 50.0), ..Default::default() },
+                Style { display: Display::None, size_constraints: Size::suggested_from_points(50.0, 50.0), ..Default::default() },
                 &[child_00, child_01],
             )
             .unwrap();

@@ -4,6 +4,7 @@ use rand::Rng;
 
 use crate::geometry::Size;
 use crate::style::Dimension;
+use crate::style::Constraints;
 use crate::style::Style;
 
 /// A trait for generating pseudo-random instances.
@@ -44,12 +45,31 @@ impl Randomizeable for Size<Dimension> {
     }
 }
 
+// impl Randomizeable for Style {
+//     fn random<R>(rng: &mut R) -> Self
+//     where
+//         R: Rng,
+//     {
+//         // TODO: Add more attributes
+//         Style { size: Size::<Dimension>::random(rng), ..Default::default() }
+//     }
+// }
+
+impl Randomizeable for Size<Constraints<Dimension>> {
+    fn random<R>(rng: &mut R) -> Self
+    where
+        R: Rng,
+    {
+        Size::suggested_from(Size::random(rng))
+    }
+}
+
 impl Randomizeable for Style {
     fn random<R>(rng: &mut R) -> Self
     where
         R: Rng,
     {
         // TODO: Add more attributes
-        Style { size: Size::<Dimension>::random(rng), ..Default::default() }
+        Style { size_constraints: Size::random(rng), ..Default::default() }
     }
 }

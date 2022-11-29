@@ -41,10 +41,10 @@ taffy = { path = ".", features = ["random"] }
 lto = true
 panic = 'abort'
 
-[[bench]]
-name = "generated"
-path = "benches/generated/mod.rs"
-harness = false
+# [[bench]]
+# name = "generated"
+# path = "benches/generated/mod.rs"
+# harness = false
 
 [[bench]]
 name = "complex"
@@ -58,3 +58,5 @@ harness = false
 
 [workspace]
 members = ["scripts/gentest"]
+
+

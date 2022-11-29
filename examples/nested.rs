@@ -5,13 +5,17 @@ fn main() -> Result<(), taffy::error::TaffyError> {
 
     // left
     let child_t1 = taffy.new_leaf(Style {
-        size: Size { width: Dimension::Points(5.0), height: Dimension::Points(5.0) },
+        size_constraints: Size::suggested_from(
+            Size { width: Dimension::Points(5.0), height: Dimension::Points(5.0) },
+        ),
         ..Default::default()
     })?;
 
     let div1 = taffy.new_with_children(
         Style {
-            size: Size { width: Dimension::Percent(0.5), height: Dimension::Percent(1.0) },
+            size_constraints: Size::suggested_from(
+                Size { width: Dimension::Percent(0.5), height: Dimension::Percent(1.0) }
+            ),
             // justify_content: JustifyContent::Center,
             ..Default::default()
         },
@@ -20,13 +24,17 @@ fn main() -> Result<(), taffy::error::TaffyError> {
 
     // right
     let child_t2 = taffy.new_leaf(Style {
-        size: Size { width: Dimension::Points(5.0), height: Dimension::Points(5.0) },
+        size_constraints: Size::suggested_from(
+            Size { width: Dimension::Points(5.0), height: Dimension::Points(5.0) }
+        ),
         ..Default::default()
     })?;
 
     let div2 = taffy.new_with_children(
         Style {
-            size: Size { width: Dimension::Percent(0.5), height: Dimension::Percent(1.0) },
+            size_constraints: Size::suggested_from(
+                Size { width: Dimension::Percent(0.5), height: Dimension::Percent(1.0) }
+            ),
             // justify_content: JustifyContent::Center,
             ..Default::default()
         },
@@ -34,7 +42,12 @@ fn main() -> Result<(), taffy::error::TaffyError> {
     )?;
 
     let container = taffy.new_with_children(
-        Style { size: Size { width: Dimension::Percent(1.0), height: Dimension::Percent(1.0) }, ..Default::default() },
+        Style { 
+            size_constraints: Size::suggested_from(
+                Size { width: Dimension::Percent(1.0), height: Dimension::Percent(1.0) }
+            ), 
+            ..Default::default() 
+        },
         &[div1, div2],
     )?;
 

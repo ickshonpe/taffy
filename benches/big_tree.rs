@@ -69,7 +69,8 @@ fn build_deep_hierarchy(taffy: &mut Taffy, node_count: u32, branching_factor: u3
 /// A deep tree that matches the shape and styling that yoga use on their benchmarks
 fn build_yoga_deep_hierarchy(taffy: &mut Taffy, node_count: u32, branching_factor: u32) -> Node {
     let style = Style {
-        size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
+        //size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
+        size_constraints: Size::suggested_from_points(10., 10.),
         flex_grow: 1.0,
         ..Default::default()
     };

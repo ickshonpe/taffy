@@ -6,7 +6,7 @@ fn relayout() {
     let mut taffy = taffy::Taffy::new();
     let node1 = taffy
         .new_leaf(taffy::style::Style {
-            size: taffy::geometry::Size { width: Dimension::Points(8f32), height: Dimension::Points(80f32) },
+            size_constraints: taffy::geometry::Size::suggested_from_points(8f32, 80f32),
             ..Default::default()
         })
         .unwrap();
@@ -14,7 +14,7 @@ fn relayout() {
         .new_with_children(
             taffy::style::Style {
                 align_self: taffy::prelude::AlignSelf::Center,
-                size: taffy::geometry::Size { width: Dimension::Auto, height: Dimension::Auto },
+                size_constraints: taffy::geometry::Size::suggested_from(taffy::geometry::Size::AUTO),
                 // size: taffy::geometry::Size { width: Dimension::Percent(1.0), height: Dimension::Percent(1.0) },
                 ..Default::default()
             },
@@ -24,7 +24,7 @@ fn relayout() {
     let node = taffy
         .new_with_children(
             taffy::style::Style {
-                size: taffy::geometry::Size { width: Dimension::Percent(1f32), height: Dimension::Percent(1f32) },
+                size_constraints: taffy::geometry::Size::suggested_from( taffy::geometry::Size { width: Dimension::Percent(1f32), height: Dimension::Percent(1f32) }),
                 ..Default::default()
             },
             &[node0],
@@ -56,3 +56,4 @@ fn relayout() {
         assert_eq!(taffy.layout(node1).unwrap().location, initial1);
     }
 }
+

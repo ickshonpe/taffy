@@ -2,6 +2,7 @@
 mod min_max_overrides {
 
     use taffy::prelude::*;
+    use taffy::style::Constraints;
 
     #[test]
     fn min_overrides_max() {
@@ -9,9 +10,14 @@ mod min_max_overrides {
 
         let child = taffy
             .new_leaf(Style {
-                size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
-                min_size: Size { width: Dimension::Points(100.0), height: Dimension::Points(100.0) },
-                max_size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
+                size_constraints: Size {
+                    width: Constraints { suggested: Dimension::Points(50.0), min: Dimension::Points(100.0), max: Dimension::Points(10.0) },
+                    height: Constraints { suggested: Dimension::Points(50.0), min: Dimension::Points(100.0), max: Dimension::Points(10.0) },
+                    ..Default::default()
+                },
+                // size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
+                // min_size: Size { width: Dimension::Points(100.0), height: Dimension::Points(100.0) },
+                // max_size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
                 ..Default::default()
             })
             .unwrap();
@@ -32,8 +38,13 @@ mod min_max_overrides {
 
         let child = taffy
             .new_leaf(Style {
-                size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
-                max_size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
+                // size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
+                // max_size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
+                size_constraints: Size {
+                    width: Constraints { suggested: Dimension::Points(50.0), max: Dimension::Points(10.0), ..Default::default() },
+                    height: Constraints { suggested: Dimension::Points(50.0), max: Dimension::Points(10.0), ..Default::default() },
+                    ..Default::default()
+                },
                 ..Default::default()
             })
             .unwrap();
@@ -54,8 +65,13 @@ mod min_max_overrides {
 
         let child = taffy
             .new_leaf(Style {
-                size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
-                min_size: Size { width: Dimension::Points(100.0), height: Dimension::Points(100.0) },
+                // size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
+                // min_size: Size { width: Dimension::Points(100.0), height: Dimension::Points(100.0) },
+                size_constraints: Size {
+                    width: Constraints { suggested: Dimension::Points(50.0), min: Dimension::Points(100.0), ..Default::default() },
+                    height: Constraints { suggested: Dimension::Points(50.0), min: Dimension::Points(100.0), ..Default::default() },
+                    ..Default::default()
+                },
                 ..Default::default()
             })
             .unwrap();

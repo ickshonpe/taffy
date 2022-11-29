@@ -7,10 +7,11 @@ mod root_constraints {
         let mut taffy = taffy::node::Taffy::new();
         let node = taffy
             .new_leaf(taffy::style::Style {
-                size: taffy::geometry::Size {
-                    width: taffy::style::Dimension::Percent(1.0),
-                    height: taffy::style::Dimension::Percent(1.0),
-                },
+                // size: taffy::geometry::Size {
+                //     width: taffy::style::Dimension::Percent(1.0),
+                //     height: taffy::style::Dimension::Percent(1.0),
+                // },
+                size_constraints: taffy::geometry::Size::suggested_from_percent(1., 1.),
                 ..Default::default()
             })
             .unwrap();
@@ -55,10 +56,11 @@ mod root_constraints {
         let mut taffy = taffy::node::Taffy::new();
         let node = taffy
             .new_leaf(taffy::style::Style {
-                size: taffy::geometry::Size {
-                    width: taffy::style::Dimension::Points(200.0),
-                    height: taffy::style::Dimension::Points(200.0),
-                },
+                // size: taffy::geometry::Size {
+                //     width: taffy::style::Dimension::Points(200.0),
+                //     height: taffy::style::Dimension::Points(200.0),
+                // },
+                size_constraints: taffy::geometry::Size::suggested_from_points(200., 200.),
                 ..Default::default()
             })
             .unwrap();

@@ -26,6 +26,7 @@ impl MaybeResolve<Option<f32>, Option<f32>> for Dimension {
     /// Converts the given [`Dimension`] into a concrete value of points
     ///
     /// Can return `None`
+    #[inline]
     fn maybe_resolve(self, context: Option<f32>) -> Option<f32> {
         match self {
             Dimension::Points(points) => Some(points),
@@ -40,6 +41,7 @@ impl MaybeResolve<f32, Option<f32>> for Dimension {
     /// Converts the given [`Dimension`] into a concrete value of points
     ///
     /// Can return `None`
+    #[inline]
     fn maybe_resolve(self, context: f32) -> Option<f32> {
         match self {
             Dimension::Points(points) => Some(points),
@@ -53,6 +55,7 @@ impl MaybeResolve<f32, Option<f32>> for Dimension {
 // Generic MaybeResolve for Size
 impl<In, Out, T: MaybeResolve<In, Out>> MaybeResolve<Size<In>, Size<Out>> for Size<T> {
     /// Converts any `parent`-relative values for size into an absolute size
+    #[inline]
     fn maybe_resolve(self, context: Size<In>) -> Size<Out> {
         Size { width: self.width.maybe_resolve(context.width), height: self.height.maybe_resolve(context.height) }
     }
@@ -60,12 +63,14 @@ impl<In, Out, T: MaybeResolve<In, Out>> MaybeResolve<Size<In>, Size<Out>> for Si
 
 impl ResolveOrDefault<Option<f32>, f32> for Dimension {
     /// Will return a default value of result is evaluated to `None`
+    #[inline]
     fn resolve_or_default(self, context: Option<f32>) -> f32 {
         self.maybe_resolve(context).unwrap_or(0.0)
     }
 }
 
 impl ResolveOrDefault<Size<Option<f32>>, Size<f32>> for Size<Dimension> {
+    #[inline]
     fn resolve_or_default(self, context: Size<Option<f32>>) -> Size<f32> {
         Size {
             width: self.width.resolve_or_default(context.width),
@@ -75,6 +80,7 @@ impl ResolveOrDefault<Size<Option<f32>>, Size<f32>> for Size<Dimension> {
 }
 
 impl ResolveOrDefault<Size<Option<f32>>, Rect<f32>> for Rect<Dimension> {
+    #[inline]
     fn resolve_or_default(self, context: Size<Option<f32>>) -> Rect<f32> {
         Rect {
             left: self.left.resolve_or_default(context.width),
@@ -86,6 +92,7 @@ impl ResolveOrDefault<Size<Option<f32>>, Rect<f32>> for Rect<Dimension> {
 }
 
 impl ResolveOrDefault<Option<f32>, Rect<f32>> for Rect<Dimension> {
+    #[inline]
     fn resolve_or_default(self, context: Option<f32>) -> Rect<f32> {
         Rect {
             left: self.left.resolve_or_default(context),
