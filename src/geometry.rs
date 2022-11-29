@@ -2,17 +2,63 @@
 
 use crate::style::{Dimension, FlexDirection, Constraints, Constraint};
 use core::ops::Add;
+use std::fs::DirEntry;
 
 pub enum AxisSize<T> {
     Height(T),
     Width(T),
 }
 
+impl <T> Clone for AxisSize<T> where T: Clone {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Height(arg0) => Self::Height(arg0.clone()),
+            Self::Width(arg0) => Self::Width(arg0.clone()),
+        }
+    }
+}
+
+impl <T> Copy for AxisSize<T> where T: Copy {}
+
 impl <T> AxisSize<T> {
+    pub fn has_dir(&self, direction: FlexDirection) -> bool {
+        match direction {
+            FlexDirection::Row | FlexDirection::RowReverse => matches!(self, Self::Width(_)),
+            FlexDirection::Column | FlexDirection::ColumnReverse => matches!(self, Self::Height(_)),
+        }
+    }
+    pub fn from_dir(direction: FlexDirection, value: T) -> AxisSize<T> {
+        match direction {
+            FlexDirection::Row | FlexDirection::RowReverse => Self::Width(value),
+            FlexDirection::Column | FlexDirection::ColumnReverse => Self::Height(value),
+        }
+    }
+
     pub fn value(self) -> T {
         match self {
-            AxisSize::Height(inner) => inner,
             AxisSize::Width(inner) => inner,
+            AxisSize::Height(inner) => inner,
+        }
+    }
+
+    pub fn with_inner<U>(self, f: impl Fn(T) -> U) -> AxisSize<U> {
+        match self {
+            AxisSize::Width(width) => AxisSize::Width(f(width)),
+            AxisSize::Height(height) => AxisSize::Height(f(height))
+        }
+    }
+
+    pub fn with_size<U, V>(self, size: Size<U>, f: impl Fn(T, U) -> V) -> AxisSize<V> {
+        match self {
+            AxisSize::Width(width) => AxisSize::Width(f(width, size.width)),
+            AxisSize::Height(height) => AxisSize::Height(f(height, size.height))
+        }
+    }
+
+    pub fn pair<U>(self, size: Size<U>) -> AxisSize<(T, U)> {
+        match self {
+            AxisSize::Width(width) => AxisSize::Width((width, size.width)),
+            AxisSize::Height(height) => AxisSize::Height((height, size.height))
         }
     }
 }
@@ -523,9 +569,27 @@ impl Size<Constraints<Dimension>> {
     }
 }
 
+impl <T> AxisSize<Constraints<T>> where T: Copy {
+    #[inline]
+    pub fn min(&self) -> AxisSize<T> {
+        self.with_inner(|inner| inner.min)
+    }
+
+    #[inline]
+    pub fn max(&self) -> AxisSize<T> {
+        self.with_inner(|inner| inner.max) 
+    }
+
+    #[inline]
+    pub fn suggested(&self) -> AxisSize<T> {
+        self.with_inner(|inner| inner.suggested)
+    }
+}
+
 #[cfg(test)] 
 mod tests {
     pub fn constraints_from_height() {
     }
 
 }
+

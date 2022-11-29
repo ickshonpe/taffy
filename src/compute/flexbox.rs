@@ -214,9 +214,9 @@ fn compute_preliminary(
 
     // If container size is undefined, re-resolve gap based on resolved base sizes
     let original_gap = constants.gap;
-    if constants.node_inner_size.main(constants.dir).is_none() {
+    if constants.node_inner_size.main(constants.dir).value().is_none() {
         let longest_line_length = flex_lines.iter().fold(f32::MIN, |acc, line| {
-            let length: f32 = line.items.iter().map(|item| item.hypothetical_outer_size.main(constants.dir)).sum();
+            let length: f32 = line.items.iter().map(|item| item.hypothetical_outer_size.main(constants.dir).value()).sum();
             acc.max(length)
         });
 
@@ -236,11 +236,11 @@ fn compute_preliminary(
     // Not part of the spec from what i can see but seems correct
     constants.container_size.set_main(
         constants.dir,
-        known_dimensions.main(constants.dir).unwrap_or({
+        known_dimensions.main(constants.dir).value().unwrap_or({
             let longest_line =
                 flex_lines.iter().fold(f32::MIN, |acc, line| acc.max(line.container_main_size_contribution));
             let size = longest_line + constants.padding_border.main_axis_sum(constants.dir);
-            match available_space.main(constants.dir) {
+            match available_space.main(constants.dir).value() {
                 AvailableSpace::Definite(val) if flex_lines.len() > 1 && size < val => val,
                 _ => size,
             }
@@ -249,7 +249,7 @@ fn compute_preliminary(
 
     constants.inner_container_size.set_main(
         constants.dir,
-        constants.container_size.main(constants.dir) - constants.padding_border.main_axis_sum(constants.dir),
+        constants.container_size.main(constants.dir).value() - constants.padding_border.main_axis_sum(constants.dir),
     );
 
     // 9.4. Cross Size Determination
@@ -525,7 +525,7 @@ fn determine_flex_base_size(
         //    cross size and the flex item’s intrinsic aspect ratio.
 
         if let Some(ratio) = child_style.aspect_ratio {
-            if let Some(cross) = node_size.cross(constants.dir) {
+            if let Some(cross) = node_size.cross(constants.dir).value() {
                 if child_style.flex_basis == Dimension::Auto {
                     child.flex_basis = cross * ratio;
                     continue;
@@ -579,8 +579,9 @@ fn determine_flex_base_size(
             SizingMode::ContentSize,
         )
         .main(constants.dir)
+        .maybe_min(child.constraints.max()).value();
         //.maybe_min(child.constraints.max().main(constants.dir));
-        .apply_max(child.constraints.main(constants.dir))
+        //.apply_max(child.constraints.main(constants.dir))
     }
 
     // The hypothetical main size is the item’s flex base size clamped according to its
@@ -603,17 +604,18 @@ fn determine_flex_base_size(
             SizingMode::ContentSize,
         )
         .main(constants.dir)
-        //.maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.suggested().main(constants.dir))
-        .apply_clamp(child.constraints.main(constants.dir))
-        .into();
+        ////.maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.suggested().main(constants.dir))
+        // .apply_clamp(child.constraints.main(constants.dir))
+        // .into();
+        .apply_clamp(child.constraints).value().into();
 
         child
             .hypothetical_inner_size
-            .set_main(constants.dir, child.flex_basis.maybe_clamp(min_main, child.constraints.max().main(constants.dir)));
+            .set_main(constants.dir, child.flex_basis.maybe_clamp(min_main, child.constraints.max().main(constants.dir).value()));
 
         child.hypothetical_outer_size.set_main(
             constants.dir,
-            child.hypothetical_inner_size.main(constants.dir) + child.margin.main_axis_sum(constants.dir),
+            child.hypothetical_inner_size.main(constants.dir).value() + child.margin.main_axis_sum(constants.dir),
         );
     }
 }
@@ -664,9 +666,9 @@ fn collect_flex_lines<'a>(
                 .find(|&(idx, child)| {
                     // Gaps only occur between items (not before the first one or after the last one)
                     // So first item in the line does not contribute a gap to the line length
-                    let gap_contribution = if idx == 0 { 0.0 } else { main_axis_gap };
-                    line_length += child.hypothetical_outer_size.main(constants.dir) + gap_contribution;
-                    if let AvailableSpace::Definite(main) = available_space.main(constants.dir) {
+                    let gap_contribution = if idx == 0 { 0.0 } else { main_axis_gap.value() };
+                    line_length += child.hypothetical_outer_size.main(constants.dir).value() + gap_contribution;
+                    if let AvailableSpace::Definite(main) = available_space.main(constants.dir).value() {
                         line_length > main && idx != 0
                     } else {
                         false
@@ -695,8 +697,8 @@ fn resolve_flexible_lengths(
     original_gap: Size<f32>,
     available_space: Size<AvailableSpace>,
 ) {
-    let total_original_main_axis_gap = sum_axis_gaps(original_gap.main(constants.dir), line.items.len());
-    let total_main_axis_gap = sum_axis_gaps(constants.gap.main(constants.dir), line.items.len());
+    let total_original_main_axis_gap = sum_axis_gaps(original_gap.main(constants.dir).value(), line.items.len());
+    let total_main_axis_gap = sum_axis_gaps(constants.gap.main(constants.dir).value(), line.items.len());
 
     // 1. Determine the used flex factor. Sum the outer hypothetical main sizes of all
     //    items on the line. If the sum is less than the flex container’s inner main size,
@@ -704,9 +706,9 @@ fn resolve_flexible_lengths(
     //    flex shrink factor.
 
     let total_hypothetical_outer_main_size =
-        line.items.iter().map(|child| child.hypothetical_outer_size.main(constants.dir)).sum::<f32>();
+        line.items.iter().map(|child| child.hypothetical_outer_size.main(constants.dir).value()).sum::<f32>();
     let used_flex_factor: f32 = total_original_main_axis_gap + total_hypothetical_outer_main_size;
-    let growing = used_flex_factor < constants.node_inner_size.main(constants.dir).unwrap_or(0.0);
+    let growing = used_flex_factor < constants.node_inner_size.main(constants.dir).value().unwrap_or(0.0);
     let shrinking = !growing;
 
     // 2. Size inflexible items. Freeze, setting its target main size to its hypothetical main size
@@ -719,22 +721,25 @@ fn resolve_flexible_lengths(
     for child in line.items.iter_mut() {
         // TODO - This is not found by reading the spec. Maybe this can be done in some other place
         // instead. This was found by trail and error fixing tests to align with webkit output.
-        if constants.node_inner_size.main(constants.dir).is_none() && constants.is_row {
+        if constants.node_inner_size.main(constants.dir).value().is_none() && constants.is_row {
             child.target_size.set_main(
                 constants.dir,
                 compute_node_layout(
                     tree,
                     child.node,
-                    child.constraints.suggested().maybe_clamp(child.constraints.min(), child.constraints.max()),
+                    //child.constraints.suggested().maybe_clamp(child.constraints.min(), child.constraints.max()),
+                    child.constraints.clamp_suggested(),
                     available_space,
                     RunMode::ComputeSize,
                     SizingMode::ContentSize,
                 )
                 .main(constants.dir)
-                .maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.max().main(constants.dir)),
+                .apply_clamp(child.constraints)
+                .value(),
+                //.maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.max().main(constants.dir)).value(),
             );
         } else {
-            child.target_size.set_main(constants.dir, child.hypothetical_inner_size.main(constants.dir));
+            child.target_size.set_main(constants.dir, child.hypothetical_inner_size.main(constants.dir).value());
         }
 
         // TODO this should really only be set inside the if-statement below but
@@ -742,18 +747,18 @@ fn resolve_flexible_lengths(
 
         child
             .outer_target_size
-            .set_main(constants.dir, child.target_size.main(constants.dir) + child.margin.main_axis_sum(constants.dir));
+            .set_main(constants.dir, child.target_size.main(constants.dir).value() + child.margin.main_axis_sum(constants.dir));
 
         let child_style = tree.style(child.node);
         if (child_style.flex_grow == 0.0 && child_style.flex_shrink == 0.0)
-            || (growing && child.flex_basis > child.hypothetical_inner_size.main(constants.dir))
-            || (shrinking && child.flex_basis < child.hypothetical_inner_size.main(constants.dir))
+            || (growing && child.flex_basis > child.hypothetical_inner_size.main(constants.dir).value())
+            || (shrinking && child.flex_basis < child.hypothetical_inner_size.main(constants.dir).value())
         {
             child.frozen = true;
         }
     }
 
-    let total_target_size = line.items.iter().map(|child| child.outer_target_size.main(constants.dir)).sum::<f32>();
+    let total_target_size = line.items.iter().map(|child| child.outer_target_size.main(constants.dir).value()).sum::<f32>();
     line.container_main_size_contribution = total_target_size + total_original_main_axis_gap;
 
     // 3. Calculate initial free space. Sum the outer sizes of all items on the line,
@@ -766,11 +771,15 @@ fn resolve_flexible_lengths(
             .iter()
             .map(|child| {
                 child.margin.main_axis_sum(constants.dir)
-                    + if child.frozen { child.target_size.main(constants.dir) } else { child.flex_basis }
+                    + if child.frozen { child.target_size.main(constants.dir).value() } else { child.flex_basis }
             })
             .sum::<f32>();
 
-    let initial_free_space = constants.node_inner_size.main(constants.dir).maybe_sub(used_space).unwrap_or(0.0);
+    let initial_free_space = constants.node_inner_size
+    .main(constants.dir)
+        .maybe_sub(used_space)
+        .value()
+        .unwrap_or(0.0);
 
     // 4. Loop
 
@@ -794,7 +803,7 @@ fn resolve_flexible_lengths(
                 .iter()
                 .map(|child| {
                     child.margin.main_axis_sum(constants.dir)
-                        + if child.frozen { child.target_size.main(constants.dir) } else { child.flex_basis }
+                        + if child.frozen { child.target_size.main(constants.dir).value() } else { child.flex_basis }
                 })
                 .sum::<f32>();
 
@@ -808,12 +817,12 @@ fn resolve_flexible_lengths(
 
         let free_space = if growing && sum_flex_grow < 1.0 {
             (initial_free_space * sum_flex_grow - total_main_axis_gap)
-                .maybe_min(constants.node_inner_size.main(constants.dir).maybe_sub(used_space))
+                .maybe_min(constants.node_inner_size.main(constants.dir).maybe_sub(used_space).value())
         } else if shrinking && sum_flex_shrink < 1.0 {
             (initial_free_space * sum_flex_shrink - total_main_axis_gap)
-                .maybe_max(constants.node_inner_size.main(constants.dir).maybe_sub(used_space))
+                .maybe_max(constants.node_inner_size.main(constants.dir).maybe_sub(used_space).value())
         } else {
-            (constants.node_inner_size.main(constants.dir).maybe_sub(used_space))
+            (constants.node_inner_size.main(constants.dir).maybe_sub(used_space)).value()
                 .unwrap_or(used_flex_factor - used_space)
         };
 
@@ -881,19 +890,22 @@ fn resolve_flexible_lengths(
                     SizingMode::ContentSize,
                 )
                 .width
-                .maybe_clamp(child.constraints.min().width, child.constraints.suggested().width)
+                .maybe_clamp(
+                    child.constraints.min().width, 
+                    child.constraints.suggested().width
+                )
                 .into()
             } else {
-                child.constraints.min().main(constants.dir)
+                child.constraints.min().main(constants.dir).value()
             };
 
-            let max_main = child.constraints.max().main(constants.dir);
-            let clamped = child.target_size.main(constants.dir).maybe_clamp(min_main, max_main).max(0.0);
-            child.violation = clamped - child.target_size.main(constants.dir);
+            let max_main = child.constraints.max().main(constants.dir).value();
+            let clamped = child.target_size.main(constants.dir).value().maybe_clamp(min_main, max_main).max(0.0);
+            child.violation = clamped - child.target_size.main(constants.dir).value();
             child.target_size.set_main(constants.dir, clamped);
             child.outer_target_size.set_main(
                 constants.dir,
-                child.target_size.main(constants.dir) + child.margin.main_axis_sum(constants.dir),
+                child.target_size.main(constants.dir).value() + child.margin.main_axis_sum(constants.dir),
             );
 
             acc + child.violation
@@ -941,7 +953,7 @@ fn determine_hypothetical_cross_size(
         //     .maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir));
 
         //let child_cross = child.constraints.cross(constants.dir).suggested.apply_clamp(child.constraints.cross(constants.dir));
-        let child_cross = child.constraints.cross(constants.dir).clamp_suggested();
+        let child_cross = child.constraints.cross(constants.dir).clamp_suggested().value();
         child.hypothetical_inner_size.set_cross(
             constants.dir,
             compute_node_layout(
@@ -953,14 +965,14 @@ fn determine_hypothetical_cross_size(
                 },
                 Size {
                     width: if constants.is_row {
-                        constants.container_size.main(constants.dir).into()
+                        constants.container_size.main(constants.dir).value().into()
                     } else {
                         available_space.width
                     },
                     height: if constants.is_row {
                         available_space.height
                     } else {
-                        constants.container_size.main(constants.dir).into()
+                        constants.container_size.main(constants.dir).value().into()
                     },
                 },
                 RunMode::ComputeSize,
@@ -968,12 +980,12 @@ fn determine_hypothetical_cross_size(
             )
             .cross(constants.dir)
             //.maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir)),
-            .apply_clamp(child.constraints.cross(constants.dir)),
+            .apply_clamp(child.constraints).value(),
         );
 
         child.hypothetical_outer_size.set_cross(
             constants.dir,
-            child.hypothetical_inner_size.cross(constants.dir) + child.margin.cross_axis_sum(constants.dir),
+            child.hypothetical_inner_size.cross(constants.dir).value() + child.margin.cross_axis_sum(constants.dir),
         );
     }
 }
@@ -1072,9 +1084,9 @@ fn calculate_cross_size(
     node_size: Size<Option<f32>>,
     constants: &AlgoConstants,
 ) {
-    if flex_lines.len() == 1 && node_size.cross(constants.dir).is_some() {
+    if flex_lines.len() == 1 && node_size.cross(constants.dir).value().is_some() {
         flex_lines[0].cross_size =
-            (node_size.cross(constants.dir).maybe_sub(constants.padding_border.cross_axis_sum(constants.dir)))
+            (node_size.cross(constants.dir).maybe_sub(constants.padding_border.cross_axis_sum(constants.dir))).value()
                 .unwrap_or(0.0);
     } else {
         for line in flex_lines.iter_mut() {
@@ -1099,11 +1111,11 @@ fn calculate_cross_size(
                     if child_style.align_self(tree.style(node)) == AlignSelf::Baseline
                         && child_style.cross_margin_start(constants.dir) != Dimension::Auto
                         && child_style.cross_margin_end(constants.dir) != Dimension::Auto
-                        && child_style.cross_size(constants.dir) == Dimension::Auto
+                        && child_style.cross_size(constants.dir).value() == Dimension::Auto
                     {
-                        max_baseline - child.baseline + child.hypothetical_outer_size.cross(constants.dir)
+                        max_baseline - child.baseline + child.hypothetical_outer_size.cross(constants.dir).value()
                     } else {
-                        child.hypothetical_outer_size.cross(constants.dir)
+                        child.hypothetical_outer_size.cross(constants.dir).value()
                     }
                 })
                 .fold(0.0, |acc, x| acc.max(x));
@@ -1126,11 +1138,12 @@ fn handle_align_content_stretch(
     node_size: Size<Option<f32>>,
     constants: &AlgoConstants,
 ) {
-    if tree.style(node).align_content == AlignContent::Stretch && node_size.cross(constants.dir).is_some() {
-        let total_cross_axis_gap = sum_axis_gaps(constants.gap.cross(constants.dir), flex_lines.len());
+    if tree.style(node).align_content == AlignContent::Stretch && node_size.cross(constants.dir).value().is_some() {
+        let total_cross_axis_gap = sum_axis_gaps(constants.gap.cross(constants.dir).value(), flex_lines.len());
         let total_cross: f32 = flex_lines.iter().map(|line| line.cross_size).sum::<f32>() + total_cross_axis_gap;
         let inner_cross =
             (node_size.cross(constants.dir).maybe_sub(constants.padding_border.cross_axis_sum(constants.dir)))
+                .value()
                 .unwrap_or(0.0);
 
         if total_cross < inner_cross {
@@ -1169,19 +1182,19 @@ fn determine_used_cross_size(
                 if child_style.align_self(tree.style(node)) == AlignSelf::Stretch
                     && child_style.cross_margin_start(constants.dir) != Dimension::Auto
                     && child_style.cross_margin_end(constants.dir) != Dimension::Auto
-                    && child_style.cross_size(constants.dir) == Dimension::Auto
+                    && child_style.cross_size(constants.dir).value() == Dimension::Auto
                 {
                     (line_cross_size - child.margin.cross_axis_sum(constants.dir))
                         //.maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir))
-                        .apply_clamp(child.constraints.cross(constants.dir))
+                        .apply_clamp(child.constraints.cross(constants.dir).value())
                 } else {
-                    child.hypothetical_inner_size.cross(constants.dir)
+                    child.hypothetical_inner_size.cross(constants.dir).value()
                 },
             );
 
             child.outer_target_size.set_cross(
                 constants.dir,
-                child.target_size.cross(constants.dir) + child.margin.cross_axis_sum(constants.dir),
+                child.target_size.cross(constants.dir).value() + child.margin.cross_axis_sum(constants.dir),
             );
         }
     }
@@ -1205,10 +1218,10 @@ fn distribute_remaining_free_space(
     constants: &AlgoConstants,
 ) {
     for line in flex_lines {
-        let total_main_axis_gap = sum_axis_gaps(constants.gap.main(constants.dir), line.items.len());
+        let total_main_axis_gap = sum_axis_gaps(constants.gap.main(constants.dir).value(), line.items.len());
         let used_space: f32 = total_main_axis_gap
-            + line.items.iter().map(|child| child.outer_target_size.main(constants.dir)).sum::<f32>();
-        let free_space = constants.inner_container_size.main(constants.dir) - used_space;
+            + line.items.iter().map(|child| child.outer_target_size.main(constants.dir).value()).sum::<f32>();
+        let free_space = constants.inner_container_size.main(constants.dir).value() - used_space;
         let mut num_auto_margins = 0;
 
         for child in line.items.iter_mut() {
@@ -1258,14 +1271,14 @@ fn distribute_remaining_free_space(
                                 0.0
                             }
                         } else {
-                            gap
+                            gap.value()
                         }
                     }
                     JustifyContent::Center => {
                         if is_first {
                             free_space / 2.0
                         } else {
-                            gap
+                            gap.value()
                         }
                     }
                     JustifyContent::FlexEnd => {
@@ -1276,28 +1289,28 @@ fn distribute_remaining_free_space(
                                 0.0
                             }
                         } else {
-                            gap
+                            gap.value()
                         }
                     }
                     JustifyContent::SpaceBetween => {
                         if is_first {
                             0.0
                         } else {
-                            gap + (free_space / (num_items - 1) as f32)
+                            gap.value() + (free_space / (num_items - 1) as f32)
                         }
                     }
                     JustifyContent::SpaceAround => {
                         if is_first {
                             (free_space / num_items as f32) / 2.0
                         } else {
-                            gap + (free_space / num_items as f32)
+                            gap.value() + (free_space / num_items as f32)
                         }
                     }
                     JustifyContent::SpaceEvenly => {
                         if is_first {
                             free_space / (num_items + 1) as f32
                         } else {
-                            gap + (free_space / (num_items + 1) as f32)
+                            gap.value() + (free_space / (num_items + 1) as f32)
                         }
                     }
                 };
@@ -1336,7 +1349,7 @@ fn resolve_cross_axis_auto_margins(
         let max_baseline: f32 = line.items.iter_mut().map(|child| child.baseline).fold(0.0, |acc, x| acc.max(x));
 
         for child in line.items.iter_mut() {
-            let free_space = line_cross_size - child.outer_target_size.cross(constants.dir);
+            let free_space = line_cross_size - child.outer_target_size.cross(constants.dir).value();
             let child_style = tree.style(child.node);
 
             if child_style.cross_margin_start(constants.dir) == Dimension::Auto
@@ -1449,19 +1462,19 @@ fn determine_container_cross_size(
     node_size: Size<Option<f32>>,
     constants: &mut AlgoConstants,
 ) -> f32 {
-    let total_cross_axis_gap = sum_axis_gaps(constants.gap.cross(constants.dir), flex_lines.len());
+    let total_cross_axis_gap = sum_axis_gaps(constants.gap.cross(constants.dir).value(), flex_lines.len());
     let total_line_cross_size: f32 = flex_lines.iter().map(|line| line.cross_size).sum::<f32>();
 
     constants.container_size.set_cross(
         constants.dir,
-        node_size.cross(constants.dir).unwrap_or(
+        node_size.cross(constants.dir).value().unwrap_or(
             total_line_cross_size + total_cross_axis_gap + constants.padding_border.cross_axis_sum(constants.dir),
         ),
     );
 
     constants.inner_container_size.set_cross(
         constants.dir,
-        constants.container_size.cross(constants.dir) - constants.padding_border.cross_axis_sum(constants.dir),
+        constants.container_size.cross(constants.dir).value() - constants.padding_border.cross_axis_sum(constants.dir),
     );
 
     total_line_cross_size
@@ -1482,8 +1495,8 @@ fn align_flex_lines_per_align_content(
 ) {
     let num_lines = flex_lines.len();
     let gap = constants.gap.cross(constants.dir);
-    let total_cross_axis_gap = sum_axis_gaps(gap, num_lines);
-    let free_space = constants.inner_container_size.cross(constants.dir) - total_cross_size - total_cross_axis_gap;
+    let total_cross_axis_gap = sum_axis_gaps(gap.value(), num_lines);
+    let free_space = constants.inner_container_size.cross(constants.dir).value() - total_cross_size - total_cross_axis_gap;
 
     let align_line = |(i, line): (usize, &mut FlexLine)| {
         let is_first = i == 0;
@@ -1497,7 +1510,7 @@ fn align_flex_lines_per_align_content(
                         0.0
                     }
                 } else {
-                    gap
+                    gap.value()
                 }
             }
             AlignContent::FlexEnd => {
@@ -1508,42 +1521,42 @@ fn align_flex_lines_per_align_content(
                         0.0
                     }
                 } else {
-                    gap
+                    gap.value()
                 }
             }
             AlignContent::Center => {
                 if is_first {
                     free_space / 2.0
                 } else {
-                    gap
+                    gap.value()
                 }
             }
             AlignContent::Stretch => {
                 if is_first {
                     0.0
                 } else {
-                    gap
+                    gap.value()
                 }
             }
             AlignContent::SpaceEvenly => {
                 if is_first {
                     free_space / (num_lines + 1) as f32
                 } else {
-                    gap + (free_space / (num_lines + 1) as f32)
+                    gap.value() + (free_space / (num_lines + 1) as f32)
                 }
             }
             AlignContent::SpaceBetween => {
                 if is_first {
                     0.0
                 } else {
-                    gap + (free_space / (num_lines - 1) as f32)
+                    gap.value() + (free_space / (num_lines - 1) as f32)
                 }
             }
             AlignContent::SpaceAround => {
                 if is_first {
                     (free_space / num_lines as f32) / 2.0
                 } else {
-                    gap + (free_space / num_lines as f32)
+                    gap.value() + (free_space / num_lines as f32)
                 }
             }
         };
@@ -1599,7 +1612,7 @@ fn calculate_flex_item(
         },
     };
 
-    *total_offset_main += item.offset_main + item.margin.main_axis_sum(direction) + preliminary_size.main(direction);
+    *total_offset_main += item.offset_main + item.margin.main_axis_sum(direction) + preliminary_size.main(direction).value();
 }
 
 /// Calculates the layout line
@@ -1751,33 +1764,36 @@ fn perform_absolute_layout_on_absolute_children(tree: &mut impl LayoutTree, node
         // This shortens the lifetime of the original binding
         let child_style = tree.style(child);
 
-        let free_main_space = constants.container_size.main(constants.dir)
+        let free_main_space = constants.container_size.main(constants.dir).value()
             - preliminary_size
                 .main(constants.dir)
                 .maybe_max(
                     child_style
-                        .min_main_size(constants.dir)
-                        .maybe_resolve(constants.node_inner_size.main(constants.dir)),
+                        // .min_main_size(constants.dir)
+                        .min_size()
+                        .maybe_resolve(constants.node_inner_size)
                 )
                 .maybe_min(
                     child_style
-                        .max_main_size(constants.dir)
-                        .maybe_resolve(constants.node_inner_size.main(constants.dir)),
-                );
+                        .max_size() //constants.dir)
+                        .maybe_resolve(constants.node_inner_size)
+                ).value();
 
-        let free_cross_space = constants.container_size.cross(constants.dir)
+        let free_cross_space = constants.container_size.cross(constants.dir).value()
             - preliminary_size
                 .cross(constants.dir)
                 .maybe_max(
                     child_style
-                        .min_cross_size(constants.dir)
-                        .maybe_resolve(constants.node_inner_size.cross(constants.dir)),
+                        // .min_cross_size(constants.dir)
+                        // .maybe_resolve(constants.node_inner_size.cross(constants.dir)),
+                        .min_size()
+                        .maybe_resolve(constants.node_inner_size)
                 )
                 .maybe_min(
                     child_style
-                        .max_cross_size(constants.dir)
-                        .maybe_resolve(constants.node_inner_size.cross(constants.dir)),
-                );
+                        .max_size()
+                        .maybe_resolve(constants.node_inner_size),
+                ).value();
 
         let offset_main = if start_main.is_some() {
             start_main.unwrap_or(0.0) + constants.border.main_start(constants.dir)

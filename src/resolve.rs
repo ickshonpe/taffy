@@ -1,6 +1,6 @@
 //! Helper trait to calculate dimensions during layout resolution
 
-use crate::{prelude::{Dimension, Rect, Size}, style::Constraints};
+use crate::{prelude::{Dimension, Rect, Size}, style::Constraints, geometry::AxisSize};
 
 /// Trait to encapsulate behaviour where we need to resolve from a
 /// potentially context-dependent size or dimension into
@@ -49,6 +49,23 @@ impl MaybeResolve<f32, Option<f32>> for Dimension {
             Dimension::Percent(percent) => Some(context * percent),
             _ => None,
         }
+    }
+}
+
+
+// pub(crate) fn maybe_resolve(&self, node_inner_size: Size<Option<f32>>) -> Size<Option<f32>> {
+//     todo!()
+// }
+
+// pub(crate) fn maybe_resolve(&self, dir: AxisSize<Option<f32>>) -> Size<Option<f32>> {
+//     todo!()
+// }
+
+impl MaybeResolve<Size<Option<f32>>, AxisSize<Option<f32>>> for AxisSize<Dimension> {
+    fn maybe_resolve(self, context: Size<Option<f32>>) -> AxisSize<Option<f32>> {
+        self.pair(context).with_inner(|(d, s)| {
+            d.maybe_resolve(s)
+        })
     }
 }
 

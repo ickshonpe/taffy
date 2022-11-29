@@ -1,9 +1,9 @@
 //! Contains numerical helper traits and functions
 #![allow(clippy::manual_clamp)]
 
+use crate::geometry::AxisSize;
 use crate::geometry::Size;
 use crate::layout::AvailableSpace;
-use crate::style::Constraint;
 use crate::style::Constraints;
 
 /// A trait to conveniently calculate minimums and maximums when some data may not be defined
@@ -179,6 +179,72 @@ impl MaybeMath<Option<f32>, f32> for f32 {
     }
 }
 
+impl MaybeMath<f32, AxisSize<Option<f32>>> for AxisSize<Option<f32>> {
+    fn maybe_min(self, rhs: f32) -> AxisSize<Option<f32>> {
+        self.with_inner(|inner| 
+            inner.maybe_min(rhs)
+        )
+    }
+
+    fn maybe_max(self, rhs: f32) -> AxisSize<Option<f32>> {
+        self.with_inner(|inner| 
+            inner.maybe_max(rhs)
+        )
+    }
+
+    fn maybe_clamp(self, min: f32, max: f32) -> AxisSize<Option<f32>> {
+        self.with_inner(|inner| 
+            inner.maybe_clamp(min, max)
+        )
+    }
+
+    fn maybe_add(self, rhs: f32) -> AxisSize<Option<f32>> {
+        self.with_inner(|inner| 
+            inner.maybe_add(rhs)
+        )
+    }
+
+    fn maybe_sub(self, rhs: f32) -> AxisSize<Option<f32>> {
+        self.with_inner(|inner| 
+            inner.maybe_sub(rhs)
+        )
+    }
+}
+
+impl MaybeMath<Size<Option<f32>>, AxisSize<f32>> for AxisSize<f32> {
+    fn maybe_min(self, rhs: Size<Option<f32>>) -> AxisSize<f32> {
+        self.with_size(
+            rhs, 
+            |inner, other| inner.maybe_min(other)
+        )
+    }
+
+    fn maybe_max(self, rhs: Size<Option<f32>>) -> AxisSize<f32> {
+        self.with_size(
+            rhs, 
+            |inner, other| inner.maybe_max(other)
+        )
+    }
+
+    fn maybe_clamp(self, min: Size<Option<f32>>, max: Size<Option<f32>>) -> AxisSize<f32> {
+        // self.with_size(
+        //     min,
+        //     |inner, min| 
+        //         self.with_size(|inner, max| maybe_clamp(inner, min, max))
+        // )
+        self.pair(min).pair(max)
+        .with_inner(|((size, min), max)| size.maybe_clamp(min, max))
+    }
+
+    fn maybe_add(self, rhs: Size<Option<f32>>) -> AxisSize<f32> {
+        self.pair(rhs).with_inner(|(size, other)| size.maybe_add(other))
+    }
+
+    fn maybe_sub(self, rhs: Size<Option<f32>>) -> AxisSize<f32> {
+        self.pair(rhs).with_inner(|(size, other)| size.maybe_sub(other))
+    }
+}
+
 impl MaybeMath<f32, AvailableSpace> for AvailableSpace {
     fn maybe_min(self, rhs: f32) -> AvailableSpace {
         match self {
@@ -350,6 +416,46 @@ impl ApplyConstraints<Size<Constraints<Option<f32>>>, Size<f32>> for Size<f32> {
     }
 }
 
+impl ApplyConstraints<Size<Constraints<Option<f32>>>, AxisSize<f32>> for AxisSize<f32> {
+    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> AxisSize<f32> {
+        let constraint = match self {
+            AxisSize::Height(_) => {
+                rhs.height
+            },
+            AxisSize::Width(_) => {
+                rhs.width
+            }
+        };
+        //self.with_inner(self.value().apply_min(constraint))
+        self.with_inner(|inner| inner.apply_min(constraint))
+        
+    }
+
+    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> AxisSize<f32> {
+        let constraint = match self {
+            AxisSize::Height(_) => {
+                rhs.height
+            },
+            AxisSize::Width(_) => {
+                rhs.width
+            }
+        };
+        self.with_inner(|inner| inner.apply_max(constraint))
+    }
+
+    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> AxisSize<f32> {
+        let constraint = match self {
+            AxisSize::Height(_) => {
+                rhs.height
+            },
+            AxisSize::Width(_) => {
+                rhs.width
+            }
+        };
+        self.with_inner(|inner| inner.apply_clamp(constraint))
+    }
+}
+
 impl Constraints<Option<f32>> {
     #[inline]
     pub fn clamp_suggested(&self) -> Option<f32> {
@@ -372,6 +478,15 @@ impl Size<Constraints<Option<f32>>> {
         }
     }
 }
+
+impl AxisSize<Constraints<Option<f32>>> {
+    #[inline]
+    pub fn clamp_suggested(&self) -> AxisSize<Option<f32>> {
+        self.with_inner(|inner| inner.clamp_suggested())
+    }
+}
+
+
 
 
 #[cfg(test)]

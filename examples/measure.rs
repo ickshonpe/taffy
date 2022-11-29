@@ -1,13 +1,7 @@
 use taffy::node::MeasureFunc;
-use taffy::prelude::*;
 
 fn main() {
     let mut taffy = taffy::node::Taffy::new();
-    let child_style = taffy::style::Style {
-        //size: taffy::geometry::Size { height: taffy::style::Dimension::Points(50.0), ..Default::default() },
-        size_constraints: taffy::geometry::Size::suggested_from_height(taffy::style::Dimension::Points(50.0)),
-        ..Default::default()
-    };
     let child = taffy
         .new_leaf_with_measure(
             taffy::style::Style {
