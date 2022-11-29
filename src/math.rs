@@ -408,10 +408,17 @@ impl ApplyConstraints<Size<Constraints<Option<f32>>>, Axis<f32>> for Axis<f32> {
     }
 }
 
-impl Constraints<Option<f32>> {
+pub trait ClampConstraint {
+    type Out;
+    fn clamp_suggested(&self) -> Self::Out;
+}
+
+impl ClampConstraint for Constraints<Option<f32>> {
+    type Out = Option<f32>;
+
     #[inline]
-    pub fn clamp_suggested(&self) -> Option<f32> {
-         match (self.suggested, self.min, self.max) {
+    fn clamp_suggested(&self) -> Option<f32> {
+        match (self.suggested, self.min, self.max) {
             (Some(base), Some(min), Some(max)) => Some(base.min(max).max(min)),
             (Some(base), None, Some(max)) => Some(base.min(max)),
             (Some(base), Some(min), None) => Some(base.max(min)),
@@ -421,9 +428,11 @@ impl Constraints<Option<f32>> {
     }
 }
 
-impl Size<Constraints<Option<f32>>> {
+impl ClampConstraint for Size<Constraints<Option<f32>>> {
+    type Out = Size<Option<f32>>;
+
     #[inline]
-    pub fn clamp_suggested(&self) -> Size<Option<f32>> {
+    fn clamp_suggested(&self) -> Size<Option<f32>> {
         Size {
             width: self.width.clamp_suggested(),
             height: self.height.clamp_suggested()
@@ -431,15 +440,14 @@ impl Size<Constraints<Option<f32>>> {
     }
 }
 
-impl Axis<Constraints<Option<f32>>> {
+impl ClampConstraint for Axis<Constraints<Option<f32>>> {
+    type Out = Axis<Option<f32>>;
+
     #[inline]
-    pub fn clamp_suggested(&self) -> Axis<Option<f32>> {
+    fn clamp_suggested(&self) -> Axis<Option<f32>> {
         self.with_inner(|inner| inner.clamp_suggested())
     }
 }
-
-
-
 
 #[cfg(test)]
 mod tests {

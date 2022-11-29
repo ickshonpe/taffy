@@ -6,7 +6,7 @@ use core::f32;
 use crate::compute::compute_node_layout;
 use crate::geometry::{Point, Rect, Size};
 use crate::layout::{AvailableSpace, Layout, RunMode, SizingMode};
-use crate::math::{MaybeMath, ApplyConstraints};
+use crate::math::{MaybeMath, ApplyConstraints, ClampConstraint};
 use crate::node::Node;
 use crate::resolve::{MaybeResolve, ResolveOrDefault};
 use crate::style::{AlignContent, AlignSelf, Dimension, Display, FlexWrap, JustifyContent, PositionType, Constraints};
@@ -1759,13 +1759,12 @@ fn perform_absolute_layout_on_absolute_children(tree: &mut impl LayoutTree, node
                 .main(constants.dir)
                 .maybe_max(
                     child_style
-                        // .min_main_size(constants.dir)
                         .min_size()
                         .maybe_resolve(constants.node_inner_size)
                 )
                 .maybe_min(
                     child_style
-                        .max_size() //constants.dir)
+                        .max_size()
                         .maybe_resolve(constants.node_inner_size)
                 ).value();
 
@@ -1774,8 +1773,7 @@ fn perform_absolute_layout_on_absolute_children(tree: &mut impl LayoutTree, node
                 .cross(constants.dir)
                 .maybe_max(
                     child_style
-                        // .min_cross_size(constants.dir)
-                        // .maybe_resolve(constants.node_inner_size.cross(constants.dir)),
+                        
                         .min_size()
                         .maybe_resolve(constants.node_inner_size)
                 )
@@ -1897,7 +1895,6 @@ mod tests {
         let parent_size = Size::MAX_CONTENT;
 
         let constants = super::compute_constants(tree.style(node_id).unwrap(), node_size, parent_size);
-        // let constants = super::compute_constants(&tree.nodes[node_id], node_size, parent_size);
 
         assert!(constants.dir == style.flex_direction);
         assert!(constants.is_row == style.flex_direction.is_row());
@@ -1937,7 +1934,6 @@ mod tests {
     fn hidden_layout_should_hide_recursively() {
         let mut taffy = Taffy::new();
 
-        // let style: Style = Style { display: Flex, size: Size::from_points(50.0, 50.0), ..Default::default() };
         let style: Style = Style { 
             display: Flex, 
             size_constraints: Size::suggested_from_points(50.0, 50.0), 
@@ -1956,7 +1952,6 @@ mod tests {
 
         let root = taffy
             .new_with_children(
-                //Style { display: Display::None, size: Size::from_points(50.0, 50.0), ..Default::default() },
                 Style { display: Display::None, size_constraints: Size::suggested_from_points(50.0, 50.0), ..Default::default() },
                 &[child_00, child_01],
             )
