@@ -536,6 +536,24 @@ impl <T> std::ops::Mul for Axis<T> where T: std::ops::Mul<Output=T> {
     }
 }
 
+impl <'a, T: 'a> std::ops::Add<AxisSummer<'a, T>> for Axis<T> where T: std::ops::Add<Output=T> + Copy + std::ops::Add {
+    type Output=Axis<T>;
+
+    fn add(self, rhs: AxisSummer<T>) -> Self::Output {
+        self.pair(rhs).with_inner(|(a, s)| a + s)
+    }
+}
+
+impl <'a, T: 'a + std::ops::Add<Output=T>> std::ops::Sub<AxisSummer<'a, T>> for Axis<T> where T: std::ops::Sub<Output=T> + Copy  + std::ops::Sub + std::ops::Add {
+    type Output=Axis<T>;
+
+    fn sub(self, rhs: AxisSummer<T>) -> Self::Output {
+        self.pair(rhs).with_inner(|(a, s)| a - s)
+    }
+}
+
+
+
 #[cfg(test)]
 mod tests {
     mod lhs_option_f32_rhs_option_f32 {
