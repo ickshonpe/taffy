@@ -3,6 +3,8 @@
 
 use crate::geometry::Size;
 use crate::layout::AvailableSpace;
+use crate::style::Constraint;
+use crate::style::Constraints;
 
 /// A trait to conveniently calculate minimums and maximums when some data may not be defined
 ///
@@ -24,6 +26,49 @@ pub(crate) trait MaybeMath<In, Out> {
     /// Subtracts rhs from `self`, treating [`None`] values as default
     fn maybe_sub(self, rhs: In) -> Out;
 }
+
+// doesn't make sense to implement this maybe?
+// impl MaybeMath<Option<f32>, Constraints<Option<f32>>> for Constraints<Option<f32>> {
+//     fn maybe_min(self, rhs: Option<f32>) -> Constraints<Option<f32>> {
+//         Constraints { 
+//             min: self.min.maybe_min(rhs), 
+//             suggested: self.suggested.maybe_min(rhs), 
+//             max: self.max.maybe_min(rhs) 
+//         }
+//     }
+
+//     fn maybe_max(self, rhs: Option<f32>) -> Constraints<Option<f32>> {
+//         Constraints { 
+//             min: self.min.maybe_max(rhs), 
+//             suggested: self.suggested.maybe_max(rhs), 
+//             max: self.max.maybe_max(rhs) 
+//         }
+//     }
+
+//     fn maybe_clamp(self, min: Option<f32>, max: Option<f32>) -> Constraints<Option<f32>> {
+//         Constraints { 
+//             min: self.min.maybe_clamp(min, max), 
+//             suggested: self.suggested.maybe_clamp(min, max), 
+//             max: self.max.maybe_clamp(min, max) 
+//         }
+//     }
+
+//     fn maybe_add(self, rhs: Option<f32>) -> Constraints<Option<f32>> {
+//         Constraints { 
+//             min: self.min.maybe_add(rhs), 
+//             suggested: self.suggested.maybe_add(rhs), 
+//             max: self.suggested.maybe_add(rhs) 
+//         }
+//     }
+
+//     fn maybe_sub(self, rhs: Option<f32>) -> Constraints<Option<f32>> {
+//         Constraints { 
+//             min: self.min.maybe_sub(rhs), 
+//             suggested: self.suggested.maybe_sub(rhs), 
+//             max: self.suggested.maybe_sub(rhs) 
+//         }
+//     }
+// }
 
 impl MaybeMath<Option<f32>, Option<f32>> for Option<f32> {
     fn maybe_min(self, rhs: Option<f32>) -> Option<f32> {
@@ -247,6 +292,27 @@ impl<In, Out, T: MaybeMath<In, Out>> MaybeMath<Size<In>, Size<Out>> for Size<T> 
         Size { width: self.width.maybe_sub(rhs.width), height: self.height.maybe_sub(rhs.height) }
     }
 }
+
+pub (crate) trait ApplyConstraints<In, Out> {
+    fn apply_min(self, rhs: In) -> Out;
+    fn apply_max(self, rhs: In) -> Out;
+    fn apply_clamp(self, rhs: In) -> Out;
+}
+
+impl ApplyConstraints<Constraints<Option<f32>>, f32> for f32 {
+    fn apply_min(self, rhs: Constraints<Option<f32>>) -> f32 {
+        MaybeMath::maybe_min(self, rhs.min)
+    }
+
+    fn apply_max(self, rhs: Constraints<Option<f32>>) -> f32 {
+        MaybeMath::maybe_max(self, rhs.max)
+    }
+
+    fn apply_clamp(self, rhs: Constraints<Option<f32>>) -> f32 {
+        MaybeMath::maybe_clamp(self, rhs.min, rhs.max)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

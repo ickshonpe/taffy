@@ -6,7 +6,7 @@ use core::f32;
 use crate::compute::compute_node_layout;
 use crate::geometry::{Point, Rect, Size};
 use crate::layout::{AvailableSpace, Layout, RunMode, SizingMode};
-use crate::math::MaybeMath;
+use crate::math::{MaybeMath, ApplyConstraints};
 use crate::node::Node;
 use crate::resolve::{MaybeResolve, ResolveOrDefault};
 use crate::style::{AlignContent, AlignSelf, Dimension, Display, FlexWrap, JustifyContent, PositionType, Constraints};
@@ -129,9 +129,13 @@ pub fn compute(
     //     || style.size_constraints.height.has_min_or_max();
 
     // Pull these out earlier to avoid borrowing issues
+    let size = style.size_constraints.maybe_resolve(known_dimensions);
+
     let min_size = style.min_size().maybe_resolve(known_dimensions);
     let max_size = style.max_size().maybe_resolve(known_dimensions);
-    let clamped_style_size = style.suggested_size().maybe_resolve(known_dimensions).maybe_clamp(min_size, max_size);
+    //let clamped_style_size = style.suggested_size().maybe_resolve(known_dimensions).maybe_clamp(min_size, max_size);
+    
+    let clamped_style_size = size.suggested().maybe_clamp(min_size, max_size);
 
     if has_min_max_sizes {
         #[cfg(feature = "debug")]
@@ -403,9 +407,6 @@ fn generate_anonymous_flex_items(tree: &impl LayoutTree, node: Node, constants: 
         .map(|(child, child_style)| {
             FlexItem {
             node: *child,
-            // size: child_style.suggested_size().maybe_resolve(constants.node_inner_size),
-            // min_size: child_style.min_size().maybe_resolve(constants.node_inner_size),
-            // max_size: child_style.max_size().maybe_resolve(constants.node_inner_size),
             constraints: child_style.size_constraints.maybe_resolve(constants.node_inner_size),
             
 
@@ -574,7 +575,8 @@ fn determine_flex_base_size(
             SizingMode::ContentSize,
         )
         .main(constants.dir)
-        .maybe_min(child.constraints.max().main(constants.dir));
+        //.maybe_min(child.constraints.max().main(constants.dir));
+        .apply_max(child.constraints.main(constants.dir))
     }
 
     // The hypothetical main size is the item’s flex base size clamped according to its
@@ -597,7 +599,8 @@ fn determine_flex_base_size(
             SizingMode::ContentSize,
         )
         .main(constants.dir)
-        .maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.suggested().main(constants.dir))
+        //.maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.suggested().main(constants.dir))
+        .apply_clamp(child.constraints.main(constants.dir))
         .into();
 
         child
