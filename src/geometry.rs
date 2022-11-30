@@ -3,6 +3,14 @@
 use crate::style::{Constraint, Constraints, Dimension, FlexDirection};
 use core::ops::Add;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Width<T>(pub T);
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Height<T>(pub T);
+
+
 pub enum Axis<T> {
     Height(T),
     Width(T),
