@@ -5,7 +5,7 @@ use core::ops::Add;
 use core::ops::Sub;
 use std::panic::panic_any;
 
-use crate::geometry::Axis;
+use crate::geometry::Length;
 use crate::geometry::AxisSummer;
 use crate::geometry::Size;
 use crate::layout::AvailableSpace;
@@ -141,24 +141,24 @@ impl MaybeMath<Option<f32>, f32> for f32 {
     }
 }
 
-impl MaybeMath<f32, Axis<Option<f32>>> for Axis<Option<f32>> {
-    fn maybe_min(self, rhs: f32) -> Axis<Option<f32>> {
+impl MaybeMath<f32, Length<Option<f32>>> for Length<Option<f32>> {
+    fn maybe_min(self, rhs: f32) -> Length<Option<f32>> {
         self.with_inner(|inner| inner.maybe_min(rhs))
     }
 
-    fn maybe_max(self, rhs: f32) -> Axis<Option<f32>> {
+    fn maybe_max(self, rhs: f32) -> Length<Option<f32>> {
         self.with_inner(|inner| inner.maybe_max(rhs))
     }
 
-    fn maybe_clamp(self, min: f32, max: f32) -> Axis<Option<f32>> {
+    fn maybe_clamp(self, min: f32, max: f32) -> Length<Option<f32>> {
         self.with_inner(|inner| inner.maybe_clamp(min, max))
     }
 
-    fn maybe_add(self, rhs: f32) -> Axis<Option<f32>> {
+    fn maybe_add(self, rhs: f32) -> Length<Option<f32>> {
         self.with_inner(|inner| inner.maybe_add(rhs))
     }
 
-    fn maybe_sub(self, rhs: f32) -> Axis<Option<f32>> {
+    fn maybe_sub(self, rhs: f32) -> Length<Option<f32>> {
         self.with_inner(|inner| inner.maybe_sub(rhs))
     }
 }
@@ -281,50 +281,50 @@ impl MaybeMath<Option<f32>, AvailableSpace> for AvailableSpace {
     }
 }
 
-impl<T, U, V: MaybeMath<T, U>> MaybeMath<Size<T>, Axis<U>> for Axis<V> {
-    fn maybe_min(self, rhs: Size<T>) -> Axis<U> {
+impl<T, U, V: MaybeMath<T, U>> MaybeMath<Size<T>, Length<U>> for Length<V> {
+    fn maybe_min(self, rhs: Size<T>) -> Length<U> {
         self.pair_size(rhs).with_inner(|(a, b)| a.maybe_min(b))
     }
 
-    fn maybe_max(self, rhs: Size<T>) -> Axis<U> {
+    fn maybe_max(self, rhs: Size<T>) -> Length<U> {
         self.pair_size(rhs).with_inner(|(a, b)| a.maybe_max(b))
     }
 
-    fn maybe_clamp(self, min: Size<T>, max: Size<T>) -> Axis<U> {
+    fn maybe_clamp(self, min: Size<T>, max: Size<T>) -> Length<U> {
         self.pair_size(min).pair_size(max).with_inner(|((x, min), max)| x.maybe_clamp(min, max))
     }
 
-    fn maybe_add(self, rhs: Size<T>) -> Axis<U> {
+    fn maybe_add(self, rhs: Size<T>) -> Length<U> {
         self.pair_size(rhs).with_inner(|(a, b)| a.maybe_add(b))
     }
 
-    fn maybe_sub(self, rhs: Size<T>) -> Axis<U> {
+    fn maybe_sub(self, rhs: Size<T>) -> Length<U> {
         self.pair_size(rhs).with_inner(|(a, b)| a.maybe_sub(b))
     }
 }
 
-impl<T, U, V> MaybeMath<AxisSummer<'_, T>, Axis<U>> for Axis<V>
+impl<T, U, V> MaybeMath<AxisSummer<'_, T>, Length<U>> for Length<V>
 where
     T: Add<Output = T> + Copy + Clone,
     V: MaybeMath<T, U>,
 {
-    fn maybe_min(self, rhs: AxisSummer<T>) -> Axis<U> {
+    fn maybe_min(self, rhs: AxisSummer<T>) -> Length<U> {
         todo!()
     }
 
-    fn maybe_max(self, rhs: AxisSummer<T>) -> Axis<U> {
+    fn maybe_max(self, rhs: AxisSummer<T>) -> Length<U> {
         todo!()
     }
 
-    fn maybe_clamp(self, min: AxisSummer<T>, max: AxisSummer<T>) -> Axis<U> {
+    fn maybe_clamp(self, min: AxisSummer<T>, max: AxisSummer<T>) -> Length<U> {
         todo!()
     }
 
-    fn maybe_add(self, rhs: AxisSummer<T>) -> Axis<U> {
+    fn maybe_add(self, rhs: AxisSummer<T>) -> Length<U> {
         self.pair(rhs).with_inner(|(a, s)| a.maybe_add(s))
     }
 
-    fn maybe_sub(self, rhs: AxisSummer<T>) -> Axis<U> where {
+    fn maybe_sub(self, rhs: AxisSummer<T>) -> Length<U> where {
         self.pair(rhs).with_inner(|(a, s)| a.maybe_sub(s))
     }
 }
@@ -374,7 +374,7 @@ impl ApplyConstraints<Constraints<Option<f32>>, f32> for f32 {
     }
 }
 
-impl ApplyConstraints<Size<Constraints<Option<f32>>>, f32> for Axis<f32> {
+impl ApplyConstraints<Size<Constraints<Option<f32>>>, f32> for Length<f32> {
     fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> f32 {
         self.pair_size(rhs).with_inner(|(a, s)| a.apply_min(s)).value()
     }
@@ -388,28 +388,28 @@ impl ApplyConstraints<Size<Constraints<Option<f32>>>, f32> for Axis<f32> {
     }
 }
 
-impl ApplyConstraints<Size<Constraints<Option<f32>>>, Axis<f32>> for Axis<f32> {
-    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> Axis<f32> {
+impl ApplyConstraints<Size<Constraints<Option<f32>>>, Length<f32>> for Length<f32> {
+    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> Length<f32> {
         let constraint = match self {
-            Axis::Height(_) => rhs.height,
-            Axis::Width(_) => rhs.width,
+            Length::Height(_) => rhs.height,
+            Length::Width(_) => rhs.width,
         };
         //self.with_inner(self.value().apply_min(constraint))
         self.with_inner(|inner| inner.apply_min(constraint))
     }
 
-    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> Axis<f32> {
+    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> Length<f32> {
         let constraint = match self {
-            Axis::Height(_) => rhs.height,
-            Axis::Width(_) => rhs.width,
+            Length::Height(_) => rhs.height,
+            Length::Width(_) => rhs.width,
         };
         self.with_inner(|inner| inner.apply_max(constraint))
     }
 
-    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> Axis<f32> {
+    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> Length<f32> {
         let constraint = match self {
-            Axis::Height(_) => rhs.height,
-            Axis::Width(_) => rhs.width,
+            Length::Height(_) => rhs.height,
+            Length::Width(_) => rhs.width,
         };
         self.with_inner(|inner| inner.apply_clamp(constraint))
     }
@@ -472,76 +472,76 @@ impl ClampConstraint for Size<Constraints<Option<f32>>> {
     }
 }
 
-impl ClampConstraint for Axis<Constraints<Option<f32>>> {
-    type Out = Axis<Option<f32>>;
+impl ClampConstraint for Length<Constraints<Option<f32>>> {
+    type Out = Length<Option<f32>>;
 
     #[inline]
-    fn clamp_suggested(&self) -> Axis<Option<f32>> {
+    fn clamp_suggested(&self) -> Length<Option<f32>> {
         self.with_inner(|inner| inner.clamp_suggested())
     }
 }
 
-impl<T> std::ops::Add for Axis<T>
+impl<T> std::ops::Add for Length<T>
 where
     T: std::ops::Add<Output = T>,
 {
-    type Output = Axis<T>;
+    type Output = Length<T>;
 
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Axis::Height(g), Axis::Height(h)) => Axis::Height(g + h),
-            (Axis::Width(v), Axis::Width(w)) => Axis::Width(v + w),
+            (Length::Height(g), Length::Height(h)) => Length::Height(g + h),
+            (Length::Width(v), Length::Width(w)) => Length::Width(v + w),
             _ => panic_any("Cannot add height and width together"),
         }
     }
 }
 
-impl<T> std::ops::Sub for Axis<T>
+impl<T> std::ops::Sub for Length<T>
 where
     T: std::ops::Sub<Output = T>,
 {
-    type Output = Axis<T>;
+    type Output = Length<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Axis::Height(g), Axis::Height(h)) => Axis::Height(g - h),
-            (Axis::Width(v), Axis::Width(w)) => Axis::Width(v - w),
+            (Length::Height(g), Length::Height(h)) => Length::Height(g - h),
+            (Length::Width(v), Length::Width(w)) => Length::Width(v - w),
             _ => panic_any("Cannot subtract height and width together"),
         }
     }
 }
 
-impl<T> std::ops::Mul for Axis<T>
+impl<T> std::ops::Mul for Length<T>
 where
     T: std::ops::Mul<Output = T>,
 {
-    type Output = Axis<T>;
+    type Output = Length<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Axis::Height(g), Axis::Height(h)) => Axis::Height(g * h),
-            (Axis::Width(v), Axis::Width(w)) => Axis::Width(v * w),
+            (Length::Height(g), Length::Height(h)) => Length::Height(g * h),
+            (Length::Width(v), Length::Width(w)) => Length::Width(v * w),
             _ => panic_any("Cannot subtract height and width together"),
         }
     }
 }
 
-impl<'a, T: 'a> std::ops::Add<AxisSummer<'a, T>> for Axis<T>
+impl<'a, T: 'a> std::ops::Add<AxisSummer<'a, T>> for Length<T>
 where
     T: std::ops::Add<Output = T> + Copy + std::ops::Add,
 {
-    type Output = Axis<T>;
+    type Output = Length<T>;
 
     fn add(self, rhs: AxisSummer<T>) -> Self::Output {
         self.pair(rhs).with_inner(|(a, s)| a + s)
     }
 }
 
-impl<'a, T: 'a + std::ops::Add<Output = T>> std::ops::Sub<AxisSummer<'a, T>> for Axis<T>
+impl<'a, T: 'a + std::ops::Add<Output = T>> std::ops::Sub<AxisSummer<'a, T>> for Length<T>
 where
     T: std::ops::Sub<Output = T> + Copy + std::ops::Sub + std::ops::Add,
 {
-    type Output = Axis<T>;
+    type Output = Length<T>;
 
     fn sub(self, rhs: AxisSummer<T>) -> Self::Output {
         self.pair(rhs).with_inner(|(a, s)| a - s)

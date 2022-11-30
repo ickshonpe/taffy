@@ -10,13 +10,30 @@ pub struct Width<T>(pub T);
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Height<T>(pub T);
 
+pub enum Axis {
+    Horizontal,
+    Vertical,
+}
 
-pub enum Axis<T> {
+impl From<FlexDirection> for Axis {
+    fn from(direction: FlexDirection) -> Self {
+        match direction {
+            FlexDirection::Row => Axis::Horizontal,
+            FlexDirection::Column => Axis::Vertical,
+            FlexDirection::RowReverse => Axis::Horizontal,
+            FlexDirection::ColumnReverse => Axis::Vertical,
+        }
+    }
+}
+
+
+
+pub enum Length<T> {
     Height(T),
     Width(T),
 }
 
-impl<T> Clone for Axis<T>
+impl<T> Clone for Length<T>
 where
     T: Clone,
 {
@@ -29,20 +46,20 @@ where
 }
 
 pub trait TwoDimensional<T> {
-    fn width(&self) -> Axis<T>;
-    fn height(&self) -> Axis<T>;
+    fn width(&self) -> Length<T>;
+    fn height(&self) -> Length<T>;
 }
 
-impl<T> Copy for Axis<T> where T: Copy {}
+impl<T> Copy for Length<T> where T: Copy {}
 
-impl<T> Axis<T> {
+impl<T> Length<T> {
     pub fn has_dir(&self, direction: FlexDirection) -> bool {
         match direction {
             FlexDirection::Row | FlexDirection::RowReverse => matches!(self, Self::Width(_)),
             FlexDirection::Column | FlexDirection::ColumnReverse => matches!(self, Self::Height(_)),
         }
     }
-    pub fn from_dir(direction: FlexDirection, value: T) -> Axis<T> {
+    pub fn from_dir(direction: FlexDirection, value: T) -> Length<T> {
         match direction {
             FlexDirection::Row | FlexDirection::RowReverse => Self::Width(value),
             FlexDirection::Column | FlexDirection::ColumnReverse => Self::Height(value),
@@ -51,74 +68,74 @@ impl<T> Axis<T> {
 
     pub fn value(self) -> T {
         match self {
-            Axis::Width(inner) => inner,
-            Axis::Height(inner) => inner,
+            Length::Width(inner) => inner,
+            Length::Height(inner) => inner,
         }
     }
 
-    pub fn with_inner<U>(self, f: impl Fn(T) -> U) -> Axis<U> {
+    pub fn with_inner<U>(self, f: impl Fn(T) -> U) -> Length<U> {
         match self {
-            Axis::Width(width) => Axis::Width(f(width)),
-            Axis::Height(height) => Axis::Height(f(height)),
+            Length::Width(width) => Length::Width(f(width)),
+            Length::Height(height) => Length::Height(f(height)),
         }
     }
 
-    pub fn with_size<U, V>(self, size: Size<U>, f: impl Fn(T, U) -> V) -> Axis<V> {
+    pub fn with_size<U, V>(self, size: Size<U>, f: impl Fn(T, U) -> V) -> Length<V> {
         match self {
-            Axis::Width(width) => Axis::Width(f(width, size.width)),
-            Axis::Height(height) => Axis::Height(f(height, size.height)),
+            Length::Width(width) => Length::Width(f(width, size.width)),
+            Length::Height(height) => Length::Height(f(height, size.height)),
         }
     }
 
-    pub fn pair_size<U>(self, size: Size<U>) -> Axis<(T, U)> {
+    pub fn pair_size<U>(self, size: Size<U>) -> Length<(T, U)> {
         match self {
-            Axis::Width(width) => Axis::Width((width, size.width)),
-            Axis::Height(height) => Axis::Height((height, size.height)),
+            Length::Width(width) => Length::Width((width, size.width)),
+            Length::Height(height) => Length::Height((height, size.height)),
         }
     }
 
-    pub fn pair<U>(self, other: impl TwoDimensional<U>) -> Axis<(T, U)> {
+    pub fn pair<U>(self, other: impl TwoDimensional<U>) -> Length<(T, U)> {
         match self {
-            Axis::Width(width) => Axis::Width((width, other.width().value())),
-            Axis::Height(height) => Axis::Height((height, other.height().value())),
+            Length::Width(width) => Length::Width((width, other.width().value())),
+            Length::Height(height) => Length::Height((height, other.height().value())),
         }
     }
 }
 
-impl<T> Axis<Option<T>> {
+impl<T> Length<Option<T>> {
     #[inline]
-    pub fn unwrap_or(self, or: Axis<T>) -> Axis<T> {
+    pub fn unwrap_or(self, or: Length<T>) -> Length<T> {
         match self {
-            Axis::Height(Some(t)) => Axis::Height(t),
-            Axis::Width(Some(t)) => Axis::Width(t),
+            Length::Height(Some(t)) => Length::Height(t),
+            Length::Width(Some(t)) => Length::Width(t),
             _ => or,
         }
     }
 
     #[inline]
-    pub fn unwrap_or_else(self, or: impl FnOnce() -> Axis<T>) -> Axis<T> {
+    pub fn unwrap_or_else(self, or: impl FnOnce() -> Length<T>) -> Length<T> {
         match self {
-            Axis::Height(Some(t)) => Axis::Height(t),
-            Axis::Width(Some(t)) => Axis::Width(t),
+            Length::Height(Some(t)) => Length::Height(t),
+            Length::Width(Some(t)) => Length::Width(t),
             _ => or(),
         }
     }
 
     #[inline]
-    pub fn or(self, or: T) -> Axis<Option<T>> {
+    pub fn or(self, or: T) -> Length<Option<T>> {
         match self {
-            Axis::Height(Some(_)) | Axis::Width(Some(_)) => self,
-            Axis::Height(None) => Axis::Height(Some(or)),
-            Axis::Width(None) => Axis::Width(Some(or)),
+            Length::Height(Some(_)) | Length::Width(Some(_)) => self,
+            Length::Height(None) => Length::Height(Some(or)),
+            Length::Width(None) => Length::Width(Some(or)),
         }
     }
 
     #[inline]
-    pub fn or_else(self, or_else: impl FnOnce() -> T) -> Axis<Option<T>> {
+    pub fn or_else(self, or_else: impl FnOnce() -> T) -> Length<Option<T>> {
         match self {
-            Axis::Height(Some(_)) | Axis::Width(Some(_)) => self,
-            Axis::Height(None) => Axis::Height(Some(or_else())),
-            Axis::Width(None) => Axis::Width(Some(or_else())),
+            Length::Height(Some(_)) | Length::Width(Some(_)) => self,
+            Length::Height(None) => Length::Height(Some(or_else())),
+            Length::Width(None) => Length::Width(Some(or_else())),
         }
     }
 }
@@ -277,12 +294,12 @@ impl<'a, T> TwoDimensional<T> for AxisSummer<'a, T>
 where
     T: Add<Output = T> + Copy + Clone,
 {
-    fn width(&self) -> Axis<T> {
-        Axis::Width(self.0.horizontal_axis_sum())
+    fn width(&self) -> Length<T> {
+        Length::Width(self.0.horizontal_axis_sum())
     }
 
-    fn height(&self) -> Axis<T> {
-        Axis::Height(self.0.vertical_axis_sum())
+    fn height(&self) -> Length<T> {
+        Length::Height(self.0.vertical_axis_sum())
     }
 }
 
@@ -342,10 +359,10 @@ impl<T> Size<T> {
         Size { width: f(self.width, other.width), height: f(self.height, other.height) }
     }
 
-    pub(crate) fn set(&mut self, value: Axis<T>) {
+    pub(crate) fn set(&mut self, value: Length<T>) {
         match value {
-            Axis::Width(width) => self.width = width,
-            Axis::Height(height) => self.height = height,
+            Length::Width(width) => self.width = width,
+            Length::Height(height) => self.height = height,
         }
     }
 
@@ -374,7 +391,7 @@ impl<T> Size<T> {
     /// Gets the extent of the main layout axis
     ///
     /// Whether this is the width or height depends on the `direction` provided
-    pub(crate) fn main(self, direction: FlexDirection) -> Axis<T> {
+    pub(crate) fn main(self, direction: FlexDirection) -> Length<T> {
         if direction.is_row() {
             self.width()
         } else {
@@ -385,7 +402,7 @@ impl<T> Size<T> {
     /// Gets the extent of the cross layout axis
     ///
     /// Whether this is the width or height depends on the `direction` provided
-    pub(crate) fn cross(self, direction: FlexDirection) -> Axis<T> {
+    pub(crate) fn cross(self, direction: FlexDirection) -> Length<T> {
         if direction.is_row() {
             self.height()
         } else {
@@ -393,12 +410,12 @@ impl<T> Size<T> {
         }
     }
 
-    pub(crate) fn height(self) -> Axis<T> {
-        Axis::Height(self.height)
+    pub(crate) fn height(self) -> Length<T> {
+        Length::Height(self.height)
     }
 
-    pub(crate) fn width(self) -> Axis<T> {
-        Axis::Width(self.width)
+    pub(crate) fn width(self) -> Length<T> {
+        Length::Width(self.width)
     }
 }
 
@@ -613,22 +630,22 @@ impl Size<Constraints<Dimension>> {
     }
 }
 
-impl<T> Axis<Constraints<T>>
+impl<T> Length<Constraints<T>>
 where
     T: Copy,
 {
     #[inline]
-    pub fn min(&self) -> Axis<T> {
+    pub fn min(&self) -> Length<T> {
         self.with_inner(|inner| inner.min)
     }
 
     #[inline]
-    pub fn max(&self) -> Axis<T> {
+    pub fn max(&self) -> Length<T> {
         self.with_inner(|inner| inner.max)
     }
 
     #[inline]
-    pub fn suggested(&self) -> Axis<T> {
+    pub fn suggested(&self) -> Length<T> {
         self.with_inner(|inner| inner.suggested)
     }
 }

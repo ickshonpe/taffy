@@ -1,7 +1,7 @@
 //! Helper trait to calculate dimensions during layout resolution
 
 use crate::{
-    geometry::Axis,
+    geometry::Length,
     prelude::{Dimension, Rect, Size},
     style::Constraints,
 };
@@ -56,8 +56,8 @@ impl MaybeResolve<f32, Option<f32>> for Dimension {
     }
 }
 
-impl MaybeResolve<Size<Option<f32>>, Axis<Option<f32>>> for Axis<Dimension> {
-    fn maybe_resolve(self, context: Size<Option<f32>>) -> Axis<Option<f32>> {
+impl MaybeResolve<Size<Option<f32>>, Length<Option<f32>>> for Length<Dimension> {
+    fn maybe_resolve(self, context: Size<Option<f32>>) -> Length<Option<f32>> {
         self.pair_size(context).with_inner(|(d, s)| d.maybe_resolve(s))
     }
 }

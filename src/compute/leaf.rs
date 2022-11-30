@@ -1,6 +1,6 @@
 //! Computes size using styles and measure functions
 
-use crate::geometry::{Axis, MaybeSet, Size, TwoDimensional};
+use crate::geometry::{Length, MaybeSet, Size, TwoDimensional};
 use crate::layout::{AvailableSpace, RunMode, SizingMode};
 use crate::math::ApplyConstraints;
 use crate::node::Node;

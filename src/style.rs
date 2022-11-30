@@ -2,7 +2,7 @@
 
 use core::default;
 
-use crate::geometry::{Axis, Rect, Size};
+use crate::geometry::{Length, Rect, Size};
 
 /// How [`Nodes`](crate::node::Node) are aligned relative to the cross axis
 ///
@@ -597,14 +597,14 @@ impl Style {
     // }
 
     /// If the `direction` is row-oriented, the min width. Otherwise the min height
-    pub(crate) fn min_main_size(&self, direction: FlexDirection) -> Axis<Dimension> {
+    pub(crate) fn min_main_size(&self, direction: FlexDirection) -> Length<Dimension> {
         //self.size_constraints.main(direction).min
         //self.size_constraints.main(direction).with_inner(|inner| inner.min)
         self.size_constraints.main(direction).min()
     }
 
     /// If the `direction` is row-oriented, the max width. Otherwise the max height
-    pub(crate) fn max_main_size(&self, direction: FlexDirection) -> Axis<Dimension> {
+    pub(crate) fn max_main_size(&self, direction: FlexDirection) -> Length<Dimension> {
         //self.size_constraints.main(direction).with_inner(|inner| inner.max)
         self.size_constraints.main(direction).max()
     }
@@ -655,17 +655,17 @@ impl Style {
     // }
 
     /// If the `direction` is row-oriented, the height. Otherwise the width
-    pub(crate) fn cross_size(&self, direction: FlexDirection) -> Axis<Dimension> {
+    pub(crate) fn cross_size(&self, direction: FlexDirection) -> Length<Dimension> {
         self.size_constraints.cross(direction).suggested()
     }
 
     /// If the `direction` is row-oriented, the min height. Otherwise the min width
-    pub(crate) fn min_cross_size(&self, direction: FlexDirection) -> Axis<Dimension> {
+    pub(crate) fn min_cross_size(&self, direction: FlexDirection) -> Length<Dimension> {
         self.size_constraints.cross(direction).min()
     }
 
     /// If the `direction` is row-oriented, the max height. Otherwise the max width
-    pub(crate) fn max_cross_size(&self, direction: FlexDirection) -> Axis<Dimension> {
+    pub(crate) fn max_cross_size(&self, direction: FlexDirection) -> Length<Dimension> {
         self.size_constraints.cross(direction).max()
     }
 
