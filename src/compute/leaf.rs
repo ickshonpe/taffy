@@ -59,8 +59,8 @@ pub(crate) fn compute(
         return node_constraints.suggested().unwrap_or(measured_size).apply_clamp(node_constraints);
     }
 
-    let padding = style.padding.resolve_or_default(available_space.width.into_option());
-    let border = style.border.resolve_or_default(available_space.width.into_option());
+    let padding = style.padding.resolve_or_default(available_space.as_options());
+    let border = style.border.resolve_or_default(available_space.as_options());
 
     Size {
         width: node_constraints.suggested()
