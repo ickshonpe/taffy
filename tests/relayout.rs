@@ -24,7 +24,10 @@ fn relayout() {
     let node = taffy
         .new_with_children(
             taffy::style::Style {
-                size_constraints: taffy::geometry::Size::suggested_from( taffy::geometry::Size { width: Dimension::Percent(1f32), height: Dimension::Percent(1f32) }),
+                size_constraints: taffy::geometry::Size::suggested_from(taffy::geometry::Size {
+                    width: Dimension::Percent(1f32),
+                    height: Dimension::Percent(1f32),
+                }),
                 ..Default::default()
             },
             &[node0],
@@ -56,4 +59,3 @@ fn relayout() {
         assert_eq!(taffy.layout(node1).unwrap().location, initial1);
     }
 }
-

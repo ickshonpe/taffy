@@ -1,6 +1,10 @@
 //! Helper trait to calculate dimensions during layout resolution
 
-use crate::{prelude::{Dimension, Rect, Size}, style::Constraints, geometry::Axis};
+use crate::{
+    geometry::Axis,
+    prelude::{Dimension, Rect, Size},
+    style::Constraints,
+};
 
 /// Trait to encapsulate behaviour where we need to resolve from a
 /// potentially context-dependent size or dimension into
@@ -52,12 +56,9 @@ impl MaybeResolve<f32, Option<f32>> for Dimension {
     }
 }
 
-
 impl MaybeResolve<Size<Option<f32>>, Axis<Option<f32>>> for Axis<Dimension> {
     fn maybe_resolve(self, context: Size<Option<f32>>) -> Axis<Option<f32>> {
-        self.pair_size(context).with_inner(|(d, s)| {
-            d.maybe_resolve(s)
-        })
+        self.pair_size(context).with_inner(|(d, s)| d.maybe_resolve(s))
     }
 }
 
@@ -75,7 +76,7 @@ impl MaybeResolve<Option<f32>, Constraints<Option<f32>>> for Constraints<Dimensi
         Constraints {
             min: self.min.maybe_resolve(context),
             suggested: self.suggested.maybe_resolve(context),
-            max: self.max.maybe_resolve(context)
+            max: self.max.maybe_resolve(context),
         }
     }
 }
@@ -85,7 +86,7 @@ impl MaybeResolve<f32, Constraints<Option<f32>>> for Constraints<Dimension> {
         Constraints {
             min: self.min.maybe_resolve(context),
             suggested: self.suggested.maybe_resolve(context),
-            max: self.max.maybe_resolve(context)
+            max: self.max.maybe_resolve(context),
         }
     }
 }

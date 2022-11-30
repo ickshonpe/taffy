@@ -14,20 +14,20 @@ fn build_deep_hierarchy(taffy: &mut taffy::node::Taffy) -> taffy::node::Node {
         .unwrap();
     let node112 = taffy
         .new_leaf(taffy::style::Style {
-           size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
+            size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
             ..Default::default()
         })
         .unwrap();
 
     let node121 = taffy
         .new_leaf(taffy::style::Style {
-           size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
+            size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
             ..Default::default()
         })
         .unwrap();
     let node122 = taffy
         .new_leaf(taffy::style::Style {
-           size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
+            size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
             ..Default::default()
         })
         .unwrap();
@@ -38,26 +38,26 @@ fn build_deep_hierarchy(taffy: &mut taffy::node::Taffy) -> taffy::node::Node {
 
     let node211 = taffy
         .new_leaf(taffy::style::Style {
-           size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
+            size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
             ..Default::default()
         })
         .unwrap();
     let node212 = taffy
         .new_leaf(taffy::style::Style {
-           size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
+            size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
             ..Default::default()
         })
         .unwrap();
 
     let node221 = taffy
         .new_leaf(taffy::style::Style {
-           size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
+            size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
             ..Default::default()
         })
         .unwrap();
     let node222 = taffy
         .new_leaf(taffy::style::Style {
-           size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
+            size_constraints: taffy::geometry::Size::suggested_from_points(10., 10.),
             ..Default::default()
         })
         .unwrap();

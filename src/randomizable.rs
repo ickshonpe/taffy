@@ -3,8 +3,8 @@
 use rand::Rng;
 
 use crate::geometry::Size;
-use crate::style::Dimension;
 use crate::style::Constraints;
+use crate::style::Dimension;
 use crate::style::Style;
 
 /// A trait for generating pseudo-random instances.

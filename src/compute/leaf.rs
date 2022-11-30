@@ -1,6 +1,6 @@
 //! Computes size using styles and measure functions
 
-use crate::geometry::{Size, MaybeSet, Axis, TwoDimensional};
+use crate::geometry::{Axis, MaybeSet, Size, TwoDimensional};
 use crate::layout::{AvailableSpace, RunMode, SizingMode};
 use crate::math::ApplyConstraints;
 use crate::node::Node;
@@ -23,12 +23,10 @@ pub(crate) fn compute(
     let style = tree.style(node);
 
     let node_constraints: Size<Constraints<Option<f32>>> = match sizing_mode {
-        SizingMode::ContentSize => {
-            Size {
-                width: Constraints::suggested(known_dimensions.width),
-                height: Constraints::suggested(known_dimensions.height)
-            }
-        }
+        SizingMode::ContentSize => Size {
+            width: Constraints::suggested(known_dimensions.width),
+            height: Constraints::suggested(known_dimensions.height),
+        },
         SizingMode::InherentSize => {
             let mut size = style.size_constraints.maybe_resolve(available_space.as_options());
             size.width.suggested = known_dimensions.width.or(size.width.suggested);
@@ -63,12 +61,14 @@ pub(crate) fn compute(
     let border = style.border.resolve_or_default(available_space.as_options());
 
     Size {
-        width: node_constraints.suggested()
+        width: node_constraints
+            .suggested()
             .width()
             .unwrap_or_else(|| padding.axis_sum().width() + border.axis_sum()) // border-box
             .apply_clamp(node_constraints),
-        height: node_constraints.suggested()
-            .height()            
+        height: node_constraints
+            .suggested()
+            .height()
             // Bug: HEIGHT OR WIDTH?
             // .unwrap_or_else(|| (padding.axis_sum().width() + border.axis_sum()).value()) // border-box
             .unwrap_or_else(|| padding.axis_sum().height() + border.axis_sum()) // border-box

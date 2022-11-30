@@ -62,7 +62,9 @@ mod measure {
             .new_with_children(
                 taffy::style::Style {
                     //size: taffy::geometry::Size { width: taffy::style::Dimension::Points(50.0), ..Default::default() },
-                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(50.0)),
+                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(
+                        50.0,
+                    )),
                     ..Default::default()
                 },
                 &[child],
@@ -94,7 +96,9 @@ mod measure {
         let node = taffy
             .new_with_children(
                 taffy::style::Style {
-                   size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(50.0)),
+                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(
+                        50.0,
+                    )),
                     padding: taffy::geometry::Rect {
                         left: taffy::style::Dimension::Points(10.0),
                         right: taffy::style::Dimension::Points(10.0),
@@ -139,7 +143,9 @@ mod measure {
             .new_with_children(
                 taffy::style::Style {
                     //size: taffy::geometry::Size { width: taffy::style::Dimension::Points(100.0), ..Default::default() },
-                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(100.0)),
+                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(
+                        100.0,
+                    )),
                     ..Default::default()
                 },
                 &[child0, child1],
@@ -180,7 +186,9 @@ mod measure {
         let node = taffy
             .new_with_children(
                 taffy::style::Style {
-                   size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(100.0)),
+                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(
+                        100.0,
+                    )),
                     ..Default::default()
                 },
                 &[child0, child1],
@@ -217,7 +225,9 @@ mod measure {
         let node = taffy
             .new_with_children(
                 taffy::style::Style {
-                   size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(100.0)),
+                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(
+                        100.0,
+                    )),
                     align_items: taffy::style::AlignItems::FlexStart,
                     ..Default::default()
                 },
@@ -257,7 +267,9 @@ mod measure {
         let node = taffy
             .new_with_children(
                 taffy::style::Style {
-                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(100.0)),
+                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(
+                        100.0,
+                    )),
                     align_items: taffy::style::AlignItems::FlexStart,
                     ..Default::default()
                 },
@@ -312,7 +324,9 @@ mod measure {
         let child = taffy
             .new_leaf_with_measure(
                 taffy::style::Style {
-                   size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(50.0)),
+                    size_constraints: taffy::geometry::Size::suggested_from_width(taffy::style::Dimension::Points(
+                        50.0,
+                    )),
                     ..Default::default()
                 },
                 MeasureFunc::Raw(|known_dimensions, _available_space| taffy::geometry::Size {
@@ -341,14 +355,15 @@ mod measure {
             .new_leaf_with_measure(
                 taffy::style::Style {
                     //size: taffy::geometry::Size { height: taffy::style::Dimension::Points(50.0), ..Default::default() },
-                    size_constraints: taffy::geometry::Size::suggested_from_height(taffy::style::Dimension::Points(50.0)),
+                    size_constraints: taffy::geometry::Size::suggested_from_height(taffy::style::Dimension::Points(
+                        50.0,
+                    )),
                     ..Default::default()
                 },
-                MeasureFunc::Raw(|known_dimensions, _available_space| {
-                    taffy::geometry::Size {
+                MeasureFunc::Raw(|known_dimensions, _available_space| taffy::geometry::Size {
                     width: known_dimensions.width.unwrap_or(100.0),
                     height: known_dimensions.height.unwrap_or(100.0),
-                }}),
+                }),
             )
             .unwrap();
 

@@ -9,11 +9,10 @@ fn main() {
                 size_constraints: taffy::geometry::Size::suggested_from_height(taffy::style::Dimension::Points(50.0)),
                 ..Default::default()
             },
-            MeasureFunc::Raw(|known_dimensions, _available_space| {
-                taffy::geometry::Size {
+            MeasureFunc::Raw(|known_dimensions, _available_space| taffy::geometry::Size {
                 width: known_dimensions.width.unwrap_or(100.0),
                 height: known_dimensions.height.unwrap_or(100.0),
-            }}),
+            }),
         )
         .unwrap();
 

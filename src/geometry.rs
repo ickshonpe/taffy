@@ -1,6 +1,6 @@
 //! Geometric primitives useful for layout
 
-use crate::style::{Dimension, FlexDirection, Constraints, Constraint};
+use crate::style::{Constraint, Constraints, Dimension, FlexDirection};
 use core::ops::Add;
 
 pub enum Axis<T> {
@@ -8,7 +8,10 @@ pub enum Axis<T> {
     Width(T),
 }
 
-impl <T> Clone for Axis<T> where T: Clone {
+impl<T> Clone for Axis<T>
+where
+    T: Clone,
+{
     fn clone(&self) -> Self {
         match self {
             Self::Height(arg0) => Self::Height(arg0.clone()),
@@ -22,10 +25,9 @@ pub trait TwoDimensional<T> {
     fn height(&self) -> Axis<T>;
 }
 
+impl<T> Copy for Axis<T> where T: Copy {}
 
-impl <T> Copy for Axis<T> where T: Copy {}
-
-impl <T> Axis<T> {
+impl<T> Axis<T> {
     pub fn has_dir(&self, direction: FlexDirection) -> bool {
         match direction {
             FlexDirection::Row | FlexDirection::RowReverse => matches!(self, Self::Width(_)),
@@ -49,21 +51,21 @@ impl <T> Axis<T> {
     pub fn with_inner<U>(self, f: impl Fn(T) -> U) -> Axis<U> {
         match self {
             Axis::Width(width) => Axis::Width(f(width)),
-            Axis::Height(height) => Axis::Height(f(height))
+            Axis::Height(height) => Axis::Height(f(height)),
         }
     }
 
     pub fn with_size<U, V>(self, size: Size<U>, f: impl Fn(T, U) -> V) -> Axis<V> {
         match self {
             Axis::Width(width) => Axis::Width(f(width, size.width)),
-            Axis::Height(height) => Axis::Height(f(height, size.height))
+            Axis::Height(height) => Axis::Height(f(height, size.height)),
         }
     }
 
     pub fn pair_size<U>(self, size: Size<U>) -> Axis<(T, U)> {
         match self {
             Axis::Width(width) => Axis::Width((width, size.width)),
-            Axis::Height(height) => Axis::Height((height, size.height))
+            Axis::Height(height) => Axis::Height((height, size.height)),
         }
     }
 
@@ -75,27 +77,27 @@ impl <T> Axis<T> {
     }
 }
 
-impl <T> Axis<Option<T>> {
+impl<T> Axis<Option<T>> {
     #[inline]
-    pub fn unwrap_or(self, or: Axis<T>) -> Axis<T> {         
+    pub fn unwrap_or(self, or: Axis<T>) -> Axis<T> {
         match self {
             Axis::Height(Some(t)) => Axis::Height(t),
             Axis::Width(Some(t)) => Axis::Width(t),
-            _ => or
+            _ => or,
         }
     }
 
     #[inline]
-    pub fn unwrap_or_else(self, or: impl FnOnce() -> Axis<T>) -> Axis<T> { 
+    pub fn unwrap_or_else(self, or: impl FnOnce() -> Axis<T>) -> Axis<T> {
         match self {
             Axis::Height(Some(t)) => Axis::Height(t),
             Axis::Width(Some(t)) => Axis::Width(t),
-            _ => or()
+            _ => or(),
         }
     }
 
     #[inline]
-    pub fn or(self, or: T) -> Axis<Option<T>> {         
+    pub fn or(self, or: T) -> Axis<Option<T>> {
         match self {
             Axis::Height(Some(_)) | Axis::Width(Some(_)) => self,
             Axis::Height(None) => Axis::Height(Some(or)),
@@ -104,7 +106,7 @@ impl <T> Axis<Option<T>> {
     }
 
     #[inline]
-    pub fn or_else(self, or_else: impl FnOnce() -> T) -> Axis<Option<T>> {         
+    pub fn or_else(self, or_else: impl FnOnce() -> T) -> Axis<Option<T>> {
         match self {
             Axis::Height(Some(_)) | Axis::Width(Some(_)) => self,
             Axis::Height(None) => Axis::Height(Some(or_else())),
@@ -259,9 +261,14 @@ impl Rect<f32> {
     }
 }
 
-pub struct AxisSummer<'a, T>(pub &'a Rect<T>) where T: Add<Output = T> + Copy + Clone;
+pub struct AxisSummer<'a, T>(pub &'a Rect<T>)
+where
+    T: Add<Output = T> + Copy + Clone;
 
-impl <'a, T> TwoDimensional<T> for AxisSummer<'a, T> where T: Add<Output = T> + Copy + Clone {
+impl<'a, T> TwoDimensional<T> for AxisSummer<'a, T>
+where
+    T: Add<Output = T> + Copy + Clone,
+{
     fn width(&self) -> Axis<T> {
         Axis::Width(self.0.horizontal_axis_sum())
     }
@@ -279,8 +286,6 @@ where
         AxisSummer(self)
     }
 }
-
-
 
 /// The width and height of a [`Rect`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -329,7 +334,7 @@ impl<T> Size<T> {
         Size { width: f(self.width, other.width), height: f(self.height, other.height) }
     }
 
-    pub (crate) fn set(&mut self, value: Axis<T>) {
+    pub(crate) fn set(&mut self, value: Axis<T>) {
         match value {
             Axis::Width(width) => self.width = width,
             Axis::Height(height) => self.height = height,
@@ -346,8 +351,6 @@ impl<T> Size<T> {
             self.height = value
         }
     }
-
-    
 
     /// Sets the extent of the cross layout axis
     ///
@@ -456,10 +459,7 @@ impl Point<f32> {
 impl Size<Constraints<Option<f32>>> {
     #[inline]
     pub fn get(&self, constraint: Constraint) -> Size<Option<f32>> {
-        Size {
-            width: self.width.get(constraint),
-            height: self.height.get(constraint),
-        }
+        Size { width: self.width.get(constraint), height: self.height.get(constraint) }
     }
 
     #[inline]
@@ -478,34 +478,27 @@ impl Size<Constraints<Option<f32>>> {
     }
 }
 
-impl Size<Constraints<Dimension>> {    
-    pub const AUTO_CONSTRAINTS: Size<Constraints<Dimension>> = Self { width: Constraints::AUTO, height: Constraints::AUTO };
-    pub const UNDEFINED_CONSTRAINTS: Size<Constraints<Dimension>> = Self { width: Constraints::UNDEFINED, height: Constraints::UNDEFINED };
-
+impl Size<Constraints<Dimension>> {
+    pub const AUTO_CONSTRAINTS: Size<Constraints<Dimension>> =
+        Self { width: Constraints::AUTO, height: Constraints::AUTO };
+    pub const UNDEFINED_CONSTRAINTS: Size<Constraints<Dimension>> =
+        Self { width: Constraints::UNDEFINED, height: Constraints::UNDEFINED };
 
     #[inline]
     pub fn min_from(min: Size<Dimension>) -> Size<Constraints<Dimension>> {
-        Size {
-            width: Constraints::min(min.width),
-            height: Constraints::min(min.height),
-            ..Size:: UNDEFINED_CONSTRAINTS
-        }
+        Size { width: Constraints::min(min.width), height: Constraints::min(min.height), ..Size::UNDEFINED_CONSTRAINTS }
     }
     #[inline]
     pub fn suggested_from(suggested: Size<Dimension>) -> Size<Constraints<Dimension>> {
         Size {
             width: Constraints::suggested(suggested.width),
             height: Constraints::suggested(suggested.height),
-            ..Size:: UNDEFINED_CONSTRAINTS
+            ..Size::UNDEFINED_CONSTRAINTS
         }
     }
     #[inline]
     pub fn max_from(max: Size<Dimension>) -> Size<Constraints<Dimension>> {
-        Size {
-            width: Constraints::max(max.width),
-            height: Constraints::max(max.height),
-            ..Size:: UNDEFINED_CONSTRAINTS
-        }
+        Size { width: Constraints::max(max.width), height: Constraints::max(max.height), ..Size::UNDEFINED_CONSTRAINTS }
     }
 
     #[inline]
@@ -540,10 +533,7 @@ impl Size<Constraints<Dimension>> {
 
     #[inline]
     pub fn get(&self, constraint: Constraint) -> Size<Dimension> {
-        Size {
-            width: self.width.get(constraint),
-            height: self.height.get(constraint),
-        }
+        Size { width: self.width.get(constraint), height: self.height.get(constraint) }
     }
 
     #[inline]
@@ -562,81 +552,51 @@ impl Size<Constraints<Dimension>> {
     }
 
     pub const fn from_width(width: Constraints<Dimension>) -> Size<Constraints<Dimension>> {
-        Size {
-            width,
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { width, ..Size::AUTO_CONSTRAINTS }
     }
 
     pub const fn from_height(height: Constraints<Dimension>) -> Size<Constraints<Dimension>> {
-        Size {
-            height,
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { height, ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
     pub fn constraint_from_width(constraint: Constraint, width: Dimension) -> Size<Constraints<Dimension>> {
-        Size {
-            width: Constraints::from_constraint(constraint, width),
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { width: Constraints::from_constraint(constraint, width), ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
     pub fn constraint_from_height(constraint: Constraint, width: Dimension) -> Size<Constraints<Dimension>> {
-        Size {
-            width: Constraints::from_constraint(constraint, width),
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { width: Constraints::from_constraint(constraint, width), ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
     pub fn min_from_width(width: Dimension) -> Size<Constraints<Dimension>> {
-        Size {
-            width: Constraints::from_constraint(Constraint::Min, width),
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { width: Constraints::from_constraint(Constraint::Min, width), ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
     pub fn min_from_height(height: Dimension) -> Size<Constraints<Dimension>> {
-        Size {
-            height: Constraints::from_constraint(Constraint::Min, height),
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { height: Constraints::from_constraint(Constraint::Min, height), ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
     pub fn suggested_from_width(width: Dimension) -> Size<Constraints<Dimension>> {
-        Size {
-            width: Constraints::from_constraint(Constraint::Suggested, width),
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { width: Constraints::from_constraint(Constraint::Suggested, width), ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
     pub fn suggested_from_height(height: Dimension) -> Size<Constraints<Dimension>> {
-        Size {
-            height: Constraints::from_constraint(Constraint::Suggested, height),
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { height: Constraints::from_constraint(Constraint::Suggested, height), ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
     pub fn max_from_width(width: Dimension) -> Size<Constraints<Dimension>> {
-        Size {
-            width: Constraints::from_constraint(Constraint::Max, width),
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { width: Constraints::from_constraint(Constraint::Max, width), ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
     pub fn max_from_height(height: Dimension) -> Size<Constraints<Dimension>> {
-        Size {
-            height: Constraints::from_constraint(Constraint::Max, height),
-            ..Size::AUTO_CONSTRAINTS
-        }
+        Size { height: Constraints::from_constraint(Constraint::Max, height), ..Size::AUTO_CONSTRAINTS }
     }
 
     #[inline]
@@ -645,7 +605,10 @@ impl Size<Constraints<Dimension>> {
     }
 }
 
-impl <T> Axis<Constraints<T>> where T: Copy {
+impl<T> Axis<Constraints<T>>
+where
+    T: Copy,
+{
     #[inline]
     pub fn min(&self) -> Axis<T> {
         self.with_inner(|inner| inner.min)
@@ -653,7 +616,7 @@ impl <T> Axis<Constraints<T>> where T: Copy {
 
     #[inline]
     pub fn max(&self) -> Axis<T> {
-        self.with_inner(|inner| inner.max) 
+        self.with_inner(|inner| inner.max)
     }
 
     #[inline]

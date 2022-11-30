@@ -6,8 +6,8 @@ pub use crate::{
     layout::{AvailableSpace, Layout},
     node::{Node, Taffy},
     style::{
-        AlignContent, AlignItems, AlignSelf, Dimension, Display, FlexDirection, FlexWrap, JustifyContent, PositionType,
-        Style, Constraints,
+        AlignContent, AlignItems, AlignSelf, Constraints, Dimension, Display, FlexDirection, FlexWrap, JustifyContent,
+        PositionType, Style,
     },
     tree::LayoutTree,
 };

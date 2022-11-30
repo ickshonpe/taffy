@@ -11,8 +11,16 @@ mod min_max_overrides {
         let child = taffy
             .new_leaf(Style {
                 size_constraints: Size {
-                    width: Constraints { suggested: Dimension::Points(50.0), min: Dimension::Points(100.0), max: Dimension::Points(10.0) },
-                    height: Constraints { suggested: Dimension::Points(50.0), min: Dimension::Points(100.0), max: Dimension::Points(10.0) },
+                    width: Constraints {
+                        suggested: Dimension::Points(50.0),
+                        min: Dimension::Points(100.0),
+                        max: Dimension::Points(10.0),
+                    },
+                    height: Constraints {
+                        suggested: Dimension::Points(50.0),
+                        min: Dimension::Points(100.0),
+                        max: Dimension::Points(10.0),
+                    },
                     ..Default::default()
                 },
                 // size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
@@ -41,8 +49,16 @@ mod min_max_overrides {
                 // size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
                 // max_size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
                 size_constraints: Size {
-                    width: Constraints { suggested: Dimension::Points(50.0), max: Dimension::Points(10.0), ..Default::default() },
-                    height: Constraints { suggested: Dimension::Points(50.0), max: Dimension::Points(10.0), ..Default::default() },
+                    width: Constraints {
+                        suggested: Dimension::Points(50.0),
+                        max: Dimension::Points(10.0),
+                        ..Default::default()
+                    },
+                    height: Constraints {
+                        suggested: Dimension::Points(50.0),
+                        max: Dimension::Points(10.0),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 ..Default::default()
@@ -68,8 +84,16 @@ mod min_max_overrides {
                 // size: Size { width: Dimension::Points(50.0), height: Dimension::Points(50.0) },
                 // min_size: Size { width: Dimension::Points(100.0), height: Dimension::Points(100.0) },
                 size_constraints: Size {
-                    width: Constraints { suggested: Dimension::Points(50.0), min: Dimension::Points(100.0), ..Default::default() },
-                    height: Constraints { suggested: Dimension::Points(50.0), min: Dimension::Points(100.0), ..Default::default() },
+                    width: Constraints {
+                        suggested: Dimension::Points(50.0),
+                        min: Dimension::Points(100.0),
+                        ..Default::default()
+                    },
+                    height: Constraints {
+                        suggested: Dimension::Points(50.0),
+                        min: Dimension::Points(100.0),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 ..Default::default()

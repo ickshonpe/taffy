@@ -1,6 +1,6 @@
 //! Final and cached data structures that represent the high-level UI layout
 
-use crate::geometry::{Point, Size, MaybeSet};
+use crate::geometry::{MaybeSet, Point, Size};
 use crate::sys::abs;
 
 /// Whether we are performing a full layout, or we merely need to size the node
@@ -85,10 +85,7 @@ impl AvailableSpace {
 
 impl MaybeSet<Size<Option<f32>>> for Size<AvailableSpace> {
     fn maybe_set(self, value: Size<Option<f32>>) -> Self {
-        Self {
-            width: self.width.maybe_set(value.width),
-            height: self.height.maybe_set(value.height),
-        }
+        Self { width: self.width.maybe_set(value.width), height: self.height.maybe_set(value.height) }
     }
 }
 

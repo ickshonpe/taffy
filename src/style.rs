@@ -2,7 +2,7 @@
 
 use core::default;
 
-use crate::geometry::{Rect, Size, Axis};
+use crate::geometry::{Axis, Rect, Size};
 
 /// How [`Nodes`](crate::node::Node) are aligned relative to the cross axis
 ///
@@ -251,7 +251,6 @@ impl Default for FlexWrap {
     }
 }
 
-
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Constraint {
     Min,
@@ -288,45 +287,32 @@ impl ConstraintDefault for Option<f32> {
 impl ConstraintDefault for Size<Option<f32>> {
     #[inline]
     fn default_constraint() -> Self {
-        Size {
-            width: None,
-            height: None,
-        }
+        Size { width: None, height: None }
     }
 }
 
-impl <T> Constraints<T> where T: ConstraintDefault + Copy {
+impl<T> Constraints<T>
+where
+    T: ConstraintDefault + Copy,
+{
     #[inline]
     pub fn default_constraints() -> Self {
-        Self {
-            min: T::default_constraint(),
-            suggested: T::default_constraint(),
-            max: T::default_constraint(),
-        }
+        Self { min: T::default_constraint(), suggested: T::default_constraint(), max: T::default_constraint() }
     }
 
     #[inline]
     pub fn min(min: T) -> Self {
-        Self {
-            min,
-            .. Self::default_constraints()
-        }
+        Self { min, ..Self::default_constraints() }
     }
 
     #[inline]
     pub fn suggested(suggested: T) -> Self {
-        Self {
-            suggested,
-            .. Self::default_constraints()
-        }
+        Self { suggested, ..Self::default_constraints() }
     }
 
     #[inline]
     pub fn max(max: T) -> Self {
-        Self {
-            max,
-            .. Self::default_constraints()
-        }
+        Self { max, ..Self::default_constraints() }
     }
 
     #[inline]
@@ -348,37 +334,18 @@ impl <T> Constraints<T> where T: ConstraintDefault + Copy {
     }
 }
 
-
 impl Constraints<Dimension> {
-    pub const DEFAULT: Self = Self {
-        min: Dimension::Auto,
-        suggested: Dimension::Auto,
-        max: Dimension::Auto,
-    };
- 
+    pub const DEFAULT: Self = Self { min: Dimension::Auto, suggested: Dimension::Auto, max: Dimension::Auto };
+
     //pub const DEFAULT: Self = Self::AUTO;
 
-    pub const FULL: Self = Self {
-        suggested: Dimension::Percent(100.),
-        max: Dimension::Percent(100.),
-        ..Self::DEFAULT
-    };
+    pub const FULL: Self = Self { suggested: Dimension::Percent(100.), max: Dimension::Percent(100.), ..Self::DEFAULT };
 
-    pub const AUTO: Self = Self {
-        min: Dimension::Auto,
-        suggested: Dimension::Auto,
-        max: Dimension::Auto,
-        ..Self::DEFAULT
-    };
+    pub const AUTO: Self =
+        Self { min: Dimension::Auto, suggested: Dimension::Auto, max: Dimension::Auto, ..Self::DEFAULT };
 
-    pub const UNDEFINED: Self = Self {
-        min: Dimension::Undefined,
-        suggested: Dimension::Undefined,
-        max: Dimension::Undefined,
-        ..Self::DEFAULT
-    };
-
-    
+    pub const UNDEFINED: Self =
+        Self { min: Dimension::Undefined, suggested: Dimension::Undefined, max: Dimension::Undefined, ..Self::DEFAULT };
 
     pub const fn has_min_or_max(&self) -> bool {
         self.min.is_defined() || self.max.is_defined()
@@ -400,7 +367,6 @@ impl Constraints<Dimension> {
     //     }
     // }
 }
-
 
 /// A unit of linear measurement
 ///
@@ -603,8 +569,6 @@ impl Style {
         size_constraints: Size::AUTO_CONSTRAINTS,
         aspect_ratio: None,
     };
-
-    
 }
 
 impl Default for Style {
@@ -632,14 +596,12 @@ impl Style {
     //     }
     // }
 
-
-     /// If the `direction` is row-oriented, the min width. Otherwise the min height
-     pub(crate) fn min_main_size(&self, direction: FlexDirection) -> Axis<Dimension> {
+    /// If the `direction` is row-oriented, the min width. Otherwise the min height
+    pub(crate) fn min_main_size(&self, direction: FlexDirection) -> Axis<Dimension> {
         //self.size_constraints.main(direction).min
         //self.size_constraints.main(direction).with_inner(|inner| inner.min)
         self.size_constraints.main(direction).min()
     }
-
 
     /// If the `direction` is row-oriented, the max width. Otherwise the max height
     pub(crate) fn max_main_size(&self, direction: FlexDirection) -> Axis<Dimension> {
@@ -692,8 +654,8 @@ impl Style {
     //     }
     // }
 
-     /// If the `direction` is row-oriented, the height. Otherwise the width
-     pub(crate) fn cross_size(&self, direction: FlexDirection) -> Axis<Dimension> {
+    /// If the `direction` is row-oriented, the height. Otherwise the width
+    pub(crate) fn cross_size(&self, direction: FlexDirection) -> Axis<Dimension> {
         self.size_constraints.cross(direction).suggested()
     }
 
@@ -850,7 +812,6 @@ mod tests {
             assert_eq!(layout.max_main_size(FlexDirection::Column).value(), Dimension::Points(2.0));
         }
 
-
         #[test]
         fn flexbox_layout_main_margin_start() {
             let layout = Style { margin: Rect::top_from_points(2.0, 1.0), ..Default::default() };
@@ -867,7 +828,8 @@ mod tests {
 
         #[test]
         fn flexbox_layout_cross_size() {
-            let layout = Style { size_constraints: Size::suggested_from(Size::from_points(1.0, 2.0)), ..Default::default() };
+            let layout =
+                Style { size_constraints: Size::suggested_from(Size::from_points(1.0, 2.0)), ..Default::default() };
             assert_eq!(layout.cross_size(FlexDirection::Row).value(), Dimension::Points(2.0));
             assert_eq!(layout.cross_size(FlexDirection::Column).value(), Dimension::Points(1.0));
         }
@@ -881,7 +843,7 @@ mod tests {
 
         #[test]
         fn flexbox_layout_max_cross_size() {
-            let layout = Style { size_constraints: Size::max_from_points(1.0, 2.0) , ..Default::default() };
+            let layout = Style { size_constraints: Size::max_from_points(1.0, 2.0), ..Default::default() };
             assert_eq!(layout.max_cross_size(FlexDirection::Row).value(), Dimension::Points(2.0));
             assert_eq!(layout.max_cross_size(FlexDirection::Column).value(), Dimension::Points(1.0));
         }

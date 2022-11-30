@@ -37,7 +37,10 @@ fn simple_child() {
     let node1 = taffy
         .new_with_children(
             taffy::style::Style {
-                size_constraints: taffy::geometry::Size::suggested_from(taffy::geometry::Size { width: Dimension::Undefined, height: Dimension::Undefined }),
+                size_constraints: taffy::geometry::Size::suggested_from(taffy::geometry::Size {
+                    width: Dimension::Undefined,
+                    height: Dimension::Undefined,
+                }),
                 ..Default::default()
             },
             &[node1_0, node1_1],
@@ -46,7 +49,10 @@ fn simple_child() {
     let node = taffy
         .new_with_children(
             taffy::style::Style {
-                size_constraints: taffy::geometry::Size::suggested_from(taffy::geometry::Size { width: Dimension::Percent(100.0), height: Dimension::Percent(100.0) }),
+                size_constraints: taffy::geometry::Size::suggested_from(taffy::geometry::Size {
+                    width: Dimension::Percent(100.0),
+                    height: Dimension::Percent(100.0),
+                }),
                 ..Default::default()
             },
             &[node0, node1],
