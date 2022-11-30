@@ -594,7 +594,7 @@ fn determine_flex_base_size(
         // The following logic was developed not from the spec but by trail and error looking into how
         // webkit handled various scenarios. Can probably be solved better by passing in
         // min-content max-content constraints from the top
-        let min_main = compute_node_layout(
+        let min_main = Some(compute_node_layout(
             tree,
             child.node,
             Size::NONE,
@@ -606,7 +606,7 @@ fn determine_flex_base_size(
         ////.maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.suggested().main(constants.dir))
         // .apply_clamp(child.constraints.main(constants.dir))
         // .into();
-        .apply_clamp(child.constraints).value().into();
+        .apply_clamp(child.constraints));
 
         child
             .hypothetical_inner_size
@@ -733,8 +733,7 @@ fn resolve_flexible_lengths(
                     SizingMode::ContentSize,
                 )
                 .main(constants.dir)
-                .apply_clamp(child.constraints)
-                .value(),
+                .apply_clamp(child.constraints),
                 //.maybe_clamp(child.constraints.min().main(constants.dir), child.constraints.max().main(constants.dir)).value(),
             );
         } else {
@@ -979,7 +978,7 @@ fn determine_hypothetical_cross_size(
             )
             .cross(constants.dir)
             //.maybe_clamp(child.constraints.min().cross(constants.dir), child.constraints.max().cross(constants.dir)),
-            .apply_clamp(child.constraints).value(),
+            .apply_clamp(child.constraints),
         );
 
         child.hypothetical_outer_size.set_cross(

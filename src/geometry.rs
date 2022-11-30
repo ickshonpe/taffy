@@ -75,6 +75,44 @@ impl <T> Axis<T> {
     }
 }
 
+impl <T> Axis<Option<T>> {
+    #[inline]
+    pub fn unwrap_or(self, or: Axis<T>) -> Axis<T> {         
+        match self {
+            Axis::Height(Some(t)) => Axis::Height(t),
+            Axis::Width(Some(t)) => Axis::Width(t),
+            _ => or
+        }
+    }
+
+    #[inline]
+    pub fn unwrap_or_else(self, or: impl FnOnce() -> Axis<T>) -> Axis<T> { 
+        match self {
+            Axis::Height(Some(t)) => Axis::Height(t),
+            Axis::Width(Some(t)) => Axis::Width(t),
+            _ => or()
+        }
+    }
+
+    #[inline]
+    pub fn or(self, or: T) -> Axis<Option<T>> {         
+        match self {
+            Axis::Height(Some(_)) | Axis::Width(Some(_)) => self,
+            Axis::Height(None) => Axis::Height(Some(or)),
+            Axis::Width(None) => Axis::Width(Some(or)),
+        }
+    }
+
+    #[inline]
+    pub fn or_else(self, or_else: impl FnOnce() -> T) -> Axis<Option<T>> {         
+        match self {
+            Axis::Height(Some(_)) | Axis::Width(Some(_)) => self,
+            Axis::Height(None) => Axis::Height(Some(or_else())),
+            Axis::Width(None) => Axis::Width(Some(or_else())),
+        }
+    }
+}
+
 /// An axis-aligned UI rectangle
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

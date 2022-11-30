@@ -1,6 +1,6 @@
 //! Computes size using styles and measure functions
 
-use crate::geometry::{Size, MaybeSet};
+use crate::geometry::{Size, MaybeSet, Axis, TwoDimensional};
 use crate::layout::{AvailableSpace, RunMode, SizingMode};
 use crate::math::ApplyConstraints;
 use crate::node::Node;
@@ -64,12 +64,14 @@ pub(crate) fn compute(
 
     Size {
         width: node_constraints.suggested()
-            .width
-            .unwrap_or(0.0 + padding.horizontal_axis_sum() + border.horizontal_axis_sum()) // border-box
-            .apply_clamp(node_constraints.width),
+            .width()
+            .unwrap_or_else(|| padding.axis_sum().width() + border.axis_sum()) // border-box
+            .apply_clamp(node_constraints),
         height: node_constraints.suggested()
-            .height            
-            .unwrap_or(0.0 + padding.horizontal_axis_sum() + border.horizontal_axis_sum()) // border-box
-            .apply_clamp(node_constraints.height),
+            .height()            
+            // Bug: HEIGHT OR WIDTH?
+            // .unwrap_or_else(|| (padding.axis_sum().width() + border.axis_sum()).value()) // border-box
+            .unwrap_or_else(|| padding.axis_sum().height() + border.axis_sum()) // border-box
+            .apply_clamp(node_constraints),
     }
 }

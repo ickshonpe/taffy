@@ -382,40 +382,17 @@ impl ApplyConstraints<Constraints<Option<f32>>, f32> for f32 {
     }
 }
 
-impl ApplyConstraints<Constraints<Option<f32>>, Option<f32>> for Option<f32> {
-    fn apply_min(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
-        self.maybe_min(rhs.min)
+impl ApplyConstraints<Size<Constraints<Option<f32>>>, f32> for Axis<f32> {
+    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> f32 {
+        self.pair_size(rhs).with_inner(|(a, s)| a.apply_min(s)).value()
     }
 
-    fn apply_max(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
-        self.maybe_max(rhs.max)
+    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> f32 {
+        self.pair_size(rhs).with_inner(|(a, s)| a.apply_max(s)).value()
     }
 
-    fn apply_clamp(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
-        self.maybe_clamp(rhs.min, rhs.max)
-    }
-}
-
-impl ApplyConstraints<Size<Constraints<Option<f32>>>, Size<f32>> for Size<f32> {
-    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32> {
-        Size {
-            width: self.width.apply_min(rhs.width),
-            height: self.height.apply_min(rhs.height),
-        }
-    }
-
-    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32>{
-        Size {
-            width: self.width.apply_max(rhs.width),
-            height: self.height.apply_max(rhs.height),
-        }
-    }
-
-    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32> {
-        Size {
-            width: self.width.apply_clamp(rhs.width),
-            height: self.height.apply_clamp(rhs.height),
-        }
+    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> f32 {
+        self.pair_size(rhs).with_inner(|(a, s)| a.apply_clamp(s)).value()
     }
 }
 
@@ -456,6 +433,44 @@ impl ApplyConstraints<Size<Constraints<Option<f32>>>, Axis<f32>> for Axis<f32> {
             }
         };
         self.with_inner(|inner| inner.apply_clamp(constraint))
+    }
+}
+
+
+impl ApplyConstraints<Constraints<Option<f32>>, Option<f32>> for Option<f32> {
+    fn apply_min(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
+        self.maybe_min(rhs.min)
+    }
+
+    fn apply_max(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
+        self.maybe_max(rhs.max)
+    }
+
+    fn apply_clamp(self, rhs: Constraints<Option<f32>>) -> Option<f32> {
+        self.maybe_clamp(rhs.min, rhs.max)
+    }
+}
+
+impl ApplyConstraints<Size<Constraints<Option<f32>>>, Size<f32>> for Size<f32> {
+    fn apply_min(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32> {
+        Size {
+            width: self.width.apply_min(rhs.width),
+            height: self.height.apply_min(rhs.height),
+        }
+    }
+
+    fn apply_max(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32>{
+        Size {
+            width: self.width.apply_max(rhs.width),
+            height: self.height.apply_max(rhs.height),
+        }
+    }
+
+    fn apply_clamp(self, rhs: Size<Constraints<Option<f32>>>) -> Size<f32> {
+        Size {
+            width: self.width.apply_clamp(rhs.width),
+            height: self.height.apply_clamp(rhs.height),
+        }
     }
 }
 
