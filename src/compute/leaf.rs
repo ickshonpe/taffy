@@ -1,11 +1,11 @@
 //! Computes size using styles and measure functions
 
-use crate::geometry::{Length, MaybeSet, Size, TwoDimensional};
+use crate::geometry::{MaybeSet, Size, TwoDimensional};
 use crate::layout::{AvailableSpace, RunMode, SizingMode};
 use crate::math::ApplyConstraints;
 use crate::node::Node;
 use crate::resolve::{MaybeResolve, ResolveOrDefault};
-use crate::style::Constraints;
+use crate::style::{Constraints, Suggested};
 use crate::tree::LayoutTree;
 
 #[cfg(feature = "debug")]
@@ -23,14 +23,15 @@ pub(crate) fn compute(
     let style = tree.style(node);
 
     let node_constraints: Size<Constraints<Option<f32>>> = match sizing_mode {
-        SizingMode::ContentSize => Size {
-            width: Constraints::suggested(known_dimensions.width),
-            height: Constraints::suggested(known_dimensions.height),
+        SizingMode::ContentSize => //Constraints::suggested_from(known_dimensions),
+        Size {
+            width: Constraints::suggested_from(known_dimensions.width),
+            height: Constraints::suggested_from(known_dimensions.height),
         },
         SizingMode::InherentSize => {
             let mut size = style.size_constraints.maybe_resolve(available_space.as_options());
-            size.width.suggested = known_dimensions.width.or(size.width.suggested);
-            size.height.suggested = known_dimensions.height.or(size.height.suggested);
+            size.width.suggested = Suggested(known_dimensions.width.or(size.width.suggested));
+            size.height.suggested = Suggested(known_dimensions.height.or(size.height.suggested));
             size
         }
     };

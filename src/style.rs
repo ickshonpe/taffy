@@ -4,6 +4,47 @@ use core::default;
 
 use crate::geometry::{Length, Rect, Size};
 
+pub trait ConstraintValue<T> {
+    fn inner(self) -> T;
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
+pub struct Min<T>(pub T);
+
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
+pub struct Max<T>(pub T);
+
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
+pub struct Suggested<T>(pub T);
+
+impl <T> ConstraintValue<T> for Min<T> {
+    fn inner(self) -> T { self.0 }
+}
+impl <T> ConstraintValue<T> for Max<T> {
+    fn inner(self) -> T { self.0 }
+}
+impl <T> ConstraintValue<T> for Suggested<T> {
+    fn inner(self) -> T { self.0 }
+}
+
+impl <T:ConstraintDefault> ConstraintDefault for Min<T> {
+    fn default_constraint() -> Self {
+        Min(T::default_constraint())
+    }
+}
+
+impl <T:ConstraintDefault> ConstraintDefault for Max<T> {
+    fn default_constraint() -> Self {
+        Max(T::default_constraint())
+    }
+}
+
+impl <T:ConstraintDefault> ConstraintDefault for Suggested<T> {
+    fn default_constraint() -> Self {
+        Suggested(T::default_constraint())
+    }
+}
+
 /// How [`Nodes`](crate::node::Node) are aligned relative to the cross axis
 ///
 /// The default behavior is [`AlignItems::Stretch`].
@@ -261,9 +302,9 @@ pub enum Constraint {
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Constraints<T> {
-    pub min: T,
-    pub suggested: T,
-    pub max: T,
+    pub min: Min<T>,
+    pub suggested: Suggested<T>,
+    pub max: Max<T>,
 }
 
 pub trait ConstraintDefault {
@@ -291,27 +332,46 @@ impl ConstraintDefault for Size<Option<f32>> {
     }
 }
 
+
+impl <T: ConstraintDefault + Copy> From<Min<T>> for Constraints<T> {
+    fn from(min: Min<T>) -> Self {
+        Self { min, ..Self::default_constraints() }
+    }
+}
+
+impl <T: ConstraintDefault + Copy> From<Max<T>> for Constraints<T> {
+    fn from(max: Max<T>) -> Self {
+        Self { max, ..Self::default_constraints() }
+    }
+}
+
+impl <T: ConstraintDefault + Copy> From<Suggested<T>> for Constraints<T> {
+    fn from(suggested: Suggested<T>) -> Self {
+        Self { suggested, ..Self::default_constraints() }
+    }
+}
+
 impl<T> Constraints<T>
 where
     T: ConstraintDefault + Copy,
 {
     #[inline]
     pub fn default_constraints() -> Self {
-        Self { min: T::default_constraint(), suggested: T::default_constraint(), max: T::default_constraint() }
+        Self { min: Min(T::default_constraint()), suggested: Suggested(T::default_constraint()), max: Max(T::default_constraint()) }
     }
 
     #[inline]
-    pub fn min(min: T) -> Self {
+    pub fn min_from(min: T) -> Self {
         Self { min, ..Self::default_constraints() }
     }
 
     #[inline]
-    pub fn suggested(suggested: T) -> Self {
+    pub fn suggested_from(suggested: T) -> Self {
         Self { suggested, ..Self::default_constraints() }
     }
 
     #[inline]
-    pub fn max(max: T) -> Self {
+    pub fn max_from(max: T) -> Self {
         Self { max, ..Self::default_constraints() }
     }
 
@@ -327,9 +387,18 @@ where
     #[inline]
     pub fn from_constraint(constraint: Constraint, dimension: T) -> Self {
         match constraint {
-            Constraint::Min => Constraints::min(dimension),
-            Constraint::Suggested => Constraints::suggested(dimension),
-            Constraint::Max => Constraints::max(dimension),
+            Constraint::Min => Constraints::min_from(dimension),
+            Constraint::Suggested => Constraints::suggested_from(dimension),
+            Constraint::Max => Constraints::max_from(dimension),
+        }
+    }
+}
+
+impl <T> Size<Constraints<T>> where T: ConstraintDefault + Copy, {
+    pub fn suggested_from(suggested: Size<T>) -> Self {
+        Self { 
+            width: Constraints::suggested_from(suggested.width), 
+            height: Constraints::suggested_from(suggested.height),
         }
     }
 }

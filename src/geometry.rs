@@ -511,19 +511,19 @@ impl Size<Constraints<Dimension>> {
 
     #[inline]
     pub fn min_from(min: Size<Dimension>) -> Size<Constraints<Dimension>> {
-        Size { width: Constraints::min(min.width), height: Constraints::min(min.height), ..Size::UNDEFINED_CONSTRAINTS }
+        Size { width: Constraints::min_from(min.width), height: Constraints::min_from(min.height), ..Size::UNDEFINED_CONSTRAINTS }
     }
-    #[inline]
-    pub fn suggested_from(suggested: Size<Dimension>) -> Size<Constraints<Dimension>> {
-        Size {
-            width: Constraints::suggested(suggested.width),
-            height: Constraints::suggested(suggested.height),
-            ..Size::UNDEFINED_CONSTRAINTS
-        }
-    }
+    // #[inline]
+    // pub fn suggested_from(suggested: Size<Dimension>) -> Size<Constraints<Dimension>> {
+    //     Size {
+    //         width: Constraints::suggested(suggested.width),
+    //         height: Constraints::suggested(suggested.height),
+    //         ..Size::UNDEFINED_CONSTRAINTS
+    //     }
+    // }
     #[inline]
     pub fn max_from(max: Size<Dimension>) -> Size<Constraints<Dimension>> {
-        Size { width: Constraints::max(max.width), height: Constraints::max(max.height), ..Size::UNDEFINED_CONSTRAINTS }
+        Size { width: Constraints::max_from(max.width), height: Constraints::max_from(max.height), ..Size::UNDEFINED_CONSTRAINTS }
     }
 
     #[inline]
