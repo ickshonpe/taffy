@@ -1,12 +1,13 @@
 //! A representation of [CSS layout properties](https://css-tricks.com/snippets/css/a-guide-to-flexbox/) in Rust, used for flexbox layout
 
-use core::default;
 
 use crate::geometry::{Length, Rect, Size};
 
 pub trait ConstraintValue<T> {
     fn inner(self) -> T;
 }
+
+
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct Min<T>(pub T);
@@ -26,6 +27,25 @@ impl <T> ConstraintValue<T> for Max<T> {
 impl <T> ConstraintValue<T> for Suggested<T> {
     fn inner(self) -> T { self.0 }
 }
+
+impl <T> Min<Option<T>> {
+    pub fn or(self, other: Self) -> Self {
+        Self(self.inner().or(other.inner()))
+    }
+}
+
+impl <T> Max<Option<T>> {
+    pub fn or(self, other: Self) -> Self {
+        Self(self.inner().or(other.inner()))
+    }
+}
+
+impl <T> Suggested<Option<T>> {
+    pub fn or(self, other: Self) -> Self {
+        Self(self.inner().or(other.inner()))
+    }
+}
+
 
 impl <T:ConstraintDefault> ConstraintDefault for Min<T> {
     fn default_constraint() -> Self {
@@ -307,6 +327,45 @@ pub struct Constraints<T> {
     pub max: Max<T>,
 }
 
+impl <T> Constraints<T> {
+    pub fn min(self) -> Min<T> {
+        self.min
+    }
+
+    pub fn suggested(self) -> Suggested<T> {
+        self.suggested
+    }
+
+    pub fn max(self) -> Max<T> {
+        self.max
+    }
+}
+
+pub trait GetConstraint<C> {
+    fn get(&self) -> C;
+}
+
+impl <T> GetConstraint<Min<T>> for Constraints<T> {
+    fn get(&self) -> Min<T> {
+        self.min
+    }
+}
+
+impl <T> GetConstraint<Suggested<T>> for Constraints<T> {
+    fn get(&self) -> Suggested<T> {
+        self.suggested
+    }
+}
+
+impl <T> GetConstraint<Max<T>> for Constraints<T> {
+    fn get(&self) -> Max<T> {
+        self.max
+    }
+}
+
+
+
+
 pub trait ConstraintDefault {
     fn default_constraint() -> Self;
 }
@@ -357,64 +416,118 @@ where
 {
     #[inline]
     pub fn default_constraints() -> Self {
-        Self { min: Min(T::default_constraint()), suggested: Suggested(T::default_constraint()), max: Max(T::default_constraint()) }
-    }
-
-    #[inline]
-    pub fn min_from(min: T) -> Self {
-        Self { min, ..Self::default_constraints() }
-    }
-
-    #[inline]
-    pub fn suggested_from(suggested: T) -> Self {
-        Self { suggested, ..Self::default_constraints() }
-    }
-
-    #[inline]
-    pub fn max_from(max: T) -> Self {
-        Self { max, ..Self::default_constraints() }
-    }
-
-    #[inline]
-    pub fn get(&self, constraint: Constraint) -> T {
-        match constraint {
-            Constraint::Min => self.min,
-            Constraint::Suggested => self.suggested,
-            Constraint::Max => self.max,
+        Self { 
+            min: Min(T::default_constraint()), 
+            suggested: Suggested(T::default_constraint()),
+            max: Max(T::default_constraint())
         }
     }
 
+    // #[inline]
+    // pub fn min_from(min: T) -> Self {
+    //     Self { min, ..Self::default_constraints() }
+    // }
+
+    // #[inline]
+    // pub fn suggested_from(suggested: T) -> Self {
+    //     Self { suggested, ..Self::default_constraints() }
+    // }
+
+    // #[inline]
+    // pub fn max_from(max: T) -> Self {
+    //     Self { max, ..Self::default_constraints() }
+    // }
+
+    // #[inline]
+    // pub fn get(&self, constraint: Constraint) -> T {
+    //     match constraint {
+    //         Constraint::Min => self.min,
+    //         Constraint::Suggested => self.suggested,
+    //         Constraint::Max => self.max,
+    //     }
+    // }
+
     #[inline]
-    pub fn from_constraint(constraint: Constraint, dimension: T) -> Self {
+    pub fn from_constraint(constraint: Constraint, value: T) -> Self {
         match constraint {
-            Constraint::Min => Constraints::min_from(dimension),
-            Constraint::Suggested => Constraints::suggested_from(dimension),
-            Constraint::Max => Constraints::max_from(dimension),
+            Constraint::Min => Constraints::from(Min(value)),
+            Constraint::Suggested => Constraints::from(Suggested(value)),
+            Constraint::Max => Constraints::from(Max(value)),
         }
     }
 }
 
-impl <T> Size<Constraints<T>> where T: ConstraintDefault + Copy, {
-    pub fn suggested_from(suggested: Size<T>) -> Self {
-        Self { 
-            width: Constraints::suggested_from(suggested.width), 
-            height: Constraints::suggested_from(suggested.height),
+impl <T> From<Size<Min<T>>> for Size<Constraints<T>> where T: ConstraintDefault + Copy {
+    fn from(size: Size<Min<T>>) -> Self {
+        Self {
+            width: Constraints::from(size.width),
+            height: Constraints::from(size.height),
         }
+    }
+}
+
+impl <T> From<Size<Suggested<T>>> for Size<Constraints<T>> where T: ConstraintDefault + Copy {
+    fn from(size: Size<Suggested<T>>) -> Self {
+        Self {
+            width: Constraints::from(size.width),
+            height: Constraints::from(size.height),
+        }
+    }
+}
+
+impl <T> From<Size<Max<T>>> for Size<Constraints<T>> where T: ConstraintDefault + Copy {
+    fn from(size: Size<Max<T>>) -> Self {
+        Self {
+            width: Constraints::from(size.width),
+            height: Constraints::from(size.height),
+        }
+    }
+}
+
+// impl <T> Size<Constraints<T>> where T: ConstraintDefault + Copy, {
+//     pub fn suggested_from(suggested: Size<T>) -> Self {
+//         Self { 
+//             width: Constraints::suggested_from(suggested.width), 
+//             height: Constraints::suggested_from(suggested.height),
+//         }
+//     }
+// }
+
+impl <T> Constraints<T> where T: Copy {
+    pub (crate) const fn all(value: T) -> Constraints<T> {
+        Self {
+            min: Min(value),
+            suggested: Suggested(value),
+            max: Max(value),
+
+        }
+    }
+}
+
+pub trait IsDefined {
+    fn is_defined(&self) -> bool;
+}
+
+impl <T> IsDefined for T where  T: ConstraintValue<Dimension> {
+    fn is_defined(&self) -> bool {
+        self.inner().is_defined()
     }
 }
 
 impl Constraints<Dimension> {
-    pub const DEFAULT: Self = Self { min: Dimension::Auto, suggested: Dimension::Auto, max: Dimension::Auto };
+    pub const DEFAULT: Self = Constraints::all(Dimension::Auto);
+        //Self { min: Dimension::Auto, suggested: Dimension::Auto, max: Dimension::Auto };
 
     //pub const DEFAULT: Self = Self::AUTO;
 
-    pub const FULL: Self = Self { suggested: Dimension::Percent(100.), max: Dimension::Percent(100.), ..Self::DEFAULT };
+    pub const FULL: Self = Constraints::all(Dimension::Percent(100.));
+        //Self { suggested: Dimension::Percent(100.), max: Dimension::Percent(100.), ..Self::DEFAULT };
 
-    pub const AUTO: Self =
-        Self { min: Dimension::Auto, suggested: Dimension::Auto, max: Dimension::Auto, ..Self::DEFAULT };
+    pub const AUTO: Self = Constraints::all(Dimension::Auto);
+        //Self { min: Dimension::Auto, suggested: Dimension::Auto, max: Dimension::Auto, ..Self::DEFAULT };
 
-    pub const UNDEFINED: Self =
-        Self { min: Dimension::Undefined, suggested: Dimension::Undefined, max: Dimension::Undefined, ..Self::DEFAULT };
+    pub const UNDEFINED: Self = Constraints::all(Dimension::Undefined);
+        //Self { min: Dimension::Undefined, suggested: Dimension::Undefined, max: Dimension::Undefined, ..Self::DEFAULT };
 
     pub const fn has_min_or_max(&self) -> bool {
         self.min.is_defined() || self.max.is_defined()
@@ -776,7 +889,7 @@ impl Style {
 
     #[inline]
     pub(crate) fn size_constraint(&self, constraint: Constraint) -> Size<Dimension> {
-        self.size_constraints.get(constraint)
+        self.size_constraints.get_constraint(constraint)
     }
 
     #[inline]

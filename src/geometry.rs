@@ -1,6 +1,6 @@
 //! Geometric primitives useful for layout
 
-use crate::style::{Constraint, Constraints, Dimension, FlexDirection};
+use crate::style::{Constraint, Constraints, Dimension, FlexDirection, Min, GetConstraint, Max, Suggested};
 use core::ops::Add;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -481,27 +481,42 @@ impl Point<f32> {
     pub const ZERO: Point<f32> = Self { x: 0.0, y: 0.0 };
 }
 
-impl Size<Constraints<Option<f32>>> {
-    #[inline]
-    pub fn get(&self, constraint: Constraint) -> Size<Option<f32>> {
-        Size { width: self.width.get(constraint), height: self.height.get(constraint) }
-    }
+// impl <T> GetConstraint<Size<Min<T>>> for Size<Constraints<T>> {
+//     fn get(&self) -> Size<Min<T>> {
+//         Size {
+//             width: self.width.get(),
+//             height: self.height.get(),
+//         }
+//     }
+// }
 
-    #[inline]
-    pub fn min(&self) -> Size<Option<f32>> {
-        self.get(Constraint::Min)
-    }
+// impl <T> GetConstraint<Size<Suggested<T>>> for Size<Constraints<T>> {
+//     fn get(&self) -> Size<Suggested<T>> {
+//         Size {
+//             width: self.width.get(),
+//             height: self.height.get(),
+//         }
+//     }
+// }
 
-    #[inline]
-    pub fn suggested(&self) -> Size<Option<f32>> {
-        self.get(Constraint::Suggested)
-    }
+// impl <T> GetConstraint<Size<Max<T>>> for Size<Constraints<T>> {
+//     fn get(&self) -> Size<Max<T>> {
+//         Size {
+//             width: self.width.get(),
+//             height: self.height.get(),
+//         }
+//     }
+// }
 
-    #[inline]
-    pub fn max(&self) -> Size<Option<f32>> {
-        self.get(Constraint::Max)
+impl <T, U> GetConstraint<Size<U>> for Size<Constraints<T>> where Constraints<T>: GetConstraint<U> {
+    fn get(&self) -> Size<U> {
+        Size {
+            width: self.width.get(),
+            height: self.height.get(),
+        }
     }
 }
+
 
 impl Size<Constraints<Dimension>> {
     pub const AUTO_CONSTRAINTS: Size<Constraints<Dimension>> =
@@ -557,23 +572,23 @@ impl Size<Constraints<Dimension>> {
     }
 
     #[inline]
-    pub fn get(&self, constraint: Constraint) -> Size<Dimension> {
+    pub fn get_constraint(&self, constraint: Constraint) -> Size<Dimension> {
         Size { width: self.width.get(constraint), height: self.height.get(constraint) }
     }
 
     #[inline]
     pub fn min(&self) -> Size<Dimension> {
-        self.get(Constraint::Min)
+        self.get_constraint(Constraint::Min)
     }
 
     #[inline]
     pub fn suggested(&self) -> Size<Dimension> {
-        self.get(Constraint::Suggested)
+        self.get_constraint(Constraint::Suggested)
     }
 
     #[inline]
     pub fn max(&self) -> Size<Dimension> {
-        self.get(Constraint::Max)
+        self.get_constraint(Constraint::Max)
     }
 
     pub const fn from_width(width: Constraints<Dimension>) -> Size<Constraints<Dimension>> {
@@ -652,4 +667,13 @@ where
 
 pub trait MaybeSet<T> {
     fn maybe_set(self, value: T) -> Self;
+}
+
+impl Size<Constraints<Size<Option<f32>>>> {
+    fn suggested(&self) -> Suggested<Size<f32>> {
+        Suggested(Size {
+            width: self.width.suggested.inner(),
+            height: self.height.suggested.,
+        })
+    }
 }

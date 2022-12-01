@@ -5,7 +5,7 @@ use crate::layout::{AvailableSpace, RunMode, SizingMode};
 use crate::math::ApplyConstraints;
 use crate::node::Node;
 use crate::resolve::{MaybeResolve, ResolveOrDefault};
-use crate::style::{Constraints, Suggested};
+use crate::style::{Constraints, Suggested, GetConstraint};
 use crate::tree::LayoutTree;
 
 #[cfg(feature = "debug")]
@@ -25,13 +25,13 @@ pub(crate) fn compute(
     let node_constraints: Size<Constraints<Option<f32>>> = match sizing_mode {
         SizingMode::ContentSize => //Constraints::suggested_from(known_dimensions),
         Size {
-            width: Constraints::suggested_from(known_dimensions.width),
-            height: Constraints::suggested_from(known_dimensions.height),
+            width: Constraints::from(Suggested(known_dimensions.width)),
+            height: Constraints::from(Suggested(known_dimensions.height)),
         },
         SizingMode::InherentSize => {
             let mut size = style.size_constraints.maybe_resolve(available_space.as_options());
-            size.width.suggested = Suggested(known_dimensions.width.or(size.width.suggested));
-            size.height.suggested = Suggested(known_dimensions.height.or(size.height.suggested));
+            size.width.suggested = Suggested(known_dimensions.width).or(size.width.suggested);
+            size.height.suggested = Suggested(known_dimensions.height).or(size.height.suggested);
             size
         }
     };
@@ -46,7 +46,7 @@ pub(crate) fn compute(
     NODE_LOGGER.labelled_debug_log("max_size ", node_max_size);
 
     // Return early if both width and height are known
-    if let Size { width: Some(width), height: Some(height) } = node_constraints.suggested() {
+    if let Size { width: Suggested(Some(width)), height: Suggested(Some(height)) } = node_constraints.get() {
         return Size { width, height }.apply_clamp(node_constraints);
     };
 
