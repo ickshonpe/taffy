@@ -37,6 +37,7 @@ mod compute;
 mod data;
 mod resolve;
 mod sys;
+mod axis;
 
 pub use crate::compute::compute_layout;
 pub use crate::node::Taffy;
