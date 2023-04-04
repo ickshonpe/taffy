@@ -1,5 +1,4 @@
 use core::fmt::{Debug, Display, Write};
-use slotmap::Key;
 use std::sync::Mutex;
 
 use crate::node::NodeKey;
