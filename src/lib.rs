@@ -31,6 +31,7 @@ pub mod prelude;
 pub mod style;
 pub mod style_helpers;
 pub mod tree;
+pub mod bevy;
 
 #[cfg(feature = "random")]
 pub mod randomizable;
