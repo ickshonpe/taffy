@@ -57,36 +57,6 @@ impl Default for TaffyConfig {
 #[derive(Component)]
 pub struct NeedsMeasure(pub bool);
 
-// /// A tree of UI [`Nodes`](`Node`), suitable for UI layout
-// pub struct Taffy {
-//     /// The [`NodeData`] for each node stored in this tree
-//     pub(crate) nodes: SlotMap<Node, NodeData>,
-
-//     /// Functions/closures that compute the intrinsic size of leaf nodes
-//     pub(crate) measure_funcs: SparseSecondaryMap<Node, MeasureFunc>,
-
-//     /// The children of each node
-//     ///
-//     /// The indexes in the outer vector correspond to the position of the parent [`NodeData`]
-// pub(crate) children: SlotMap<Node, ChildrenVec<Node>>,
-
-//     /// The parents of each node
-//     ///
-//     /// The indexes in the outer vector correspond to the position of the child [`NodeData`]
-//     pub(crate) parents: SlotMap<Node, Option<Node>>,
-
-//     /// Layout mode configuration
-//     pub(crate) config: TaffyConfig,
-// }
-
-
-
-// impl Default for Taffy {
-//     fn default() -> Self {
-//         Taffy::new()
-//     }
-// }
-
 /// cached size layout info something
 #[derive(Component, Default, Deref, DerefMut)]
 pub struct SizeCache(pub [Option<Cache>; CACHE_SIZE]);
