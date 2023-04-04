@@ -1,11 +1,13 @@
 //! The baseline requirements of any UI Tree so Taffy can efficiently calculate the layout
 
-use slotmap::DefaultKey;
+//use slotmap::DefaultKey;
+
+use bevy::prelude::{Entity, Mut};
 
 use crate::{
     error::TaffyResult,
     layout::{Cache, Layout},
-    prelude::*,
+    prelude::*, node::SizeCache,
 };
 
 /// Any item that implements the LayoutTree can be layed out using Taffy's algorithms.
@@ -14,7 +16,7 @@ use crate::{
 /// remains the same between re-layouts.
 pub trait LayoutTree {
     /// Type representing an iterator of the children of a node
-    type ChildIter<'a>: Iterator<Item = &'a DefaultKey>
+    type ChildIter<'a>: Iterator<Item = &'a Entity>
     where
         Self: 'a;
 
@@ -43,7 +45,7 @@ pub trait LayoutTree {
     fn layout(&self, node: Node) -> &Layout;
 
     /// Modify the node's output layout
-    fn layout_mut(&mut self, node: Node) -> &mut Layout;
+    fn layout_mut(&mut self, node: Node) -> Mut<'_, Layout>;
 
     /// Mark a node as dirty to tell Taffy that something has changed and it needs to be recomputed.
     ///
@@ -62,5 +64,5 @@ pub trait LayoutTree {
     fn needs_measure(&self, node: Node) -> bool;
 
     /// Get a cache entry for this Node by index
-    fn cache_mut(&mut self, node: Node, index: usize) -> &mut Option<Cache>;
+    fn cache_mut(&mut self, node: Node) -> Mut<'_, SizeCache>;
 }

@@ -7,11 +7,13 @@ pub(crate) mod leaf;
 #[cfg(feature = "grid")]
 pub(crate) mod grid;
 
+use bevy::prelude::World;
+
 use crate::data::CACHE_SIZE;
 use crate::error::TaffyError;
 use crate::geometry::{Point, Size};
 use crate::layout::{Cache, Layout, RunMode, SizeAndBaselines, SizingMode};
-use crate::node::{Node, Taffy};
+use crate::node::{Node, TaffyConfig};
 use crate::style::{AvailableSpace, Display};
 use crate::sys::round;
 use crate::tree::LayoutTree;
@@ -25,7 +27,7 @@ use self::leaf::LeafAlgorithm;
 use crate::debug::NODE_LOGGER;
 
 /// Updates the stored layout of the provided `node` and its children
-pub fn compute_layout(taffy: &mut Taffy, root: Node, available_space: Size<AvailableSpace>) -> Result<(), TaffyError> {
+pub fn compute_layout(taffy: &mut World, root: Node, available_space: Size<AvailableSpace>) -> Result<(), TaffyError> {
     // Recursively compute node layout
     let size_and_baselines = GenericAlgorithm::perform_layout(
         taffy,
@@ -40,7 +42,7 @@ pub fn compute_layout(taffy: &mut Taffy, root: Node, available_space: Size<Avail
     *taffy.layout_mut(root) = layout;
 
     // If rounding is enabled, recursively round the layout's of this node and all children
-    if taffy.config.use_rounding {
+    if taffy.resource::<TaffyConfig>().use_rounding {
         round_layout(taffy, root, 0.0, 0.0);
     }
 
@@ -221,7 +223,7 @@ fn compute_node_layout(
 
     // Cache result
     let cache_slot = compute_cache_slot(known_dimensions, available_space);
-    *tree.cache_mut(node, cache_slot) = Some(Cache {
+    tree.cache_mut(node)[cache_slot] = Some(Cache {
         known_dimensions,
         available_space,
         run_mode: cache_run_mode,
@@ -310,7 +312,7 @@ fn compute_from_cache(
     run_mode: RunMode,
 ) -> Option<SizeAndBaselines> {
     for idx in 0..CACHE_SIZE {
-        let entry = tree.cache_mut(node, idx);
+        let entry = tree.cache_mut(node)[idx];
         if let Some(entry) = entry {
             // Cached ComputeSize results are not valid if we are running in PerformLayout mode
             if entry.run_mode == RunMode::ComputeSize && run_mode == RunMode::PeformLayout {
@@ -389,7 +391,7 @@ fn perform_hidden_layout(tree: &mut impl LayoutTree, node: Node) {
 ///
 /// See <https://github.com/facebook/yoga/commit/aa5b296ac78f7a22e1aeaf4891243c6bb76488e2> for more context
 fn round_layout(tree: &mut impl LayoutTree, node: Node, abs_x: f32, abs_y: f32) {
-    let layout = tree.layout_mut(node);
+    let mut layout = tree.layout_mut(node);
     let abs_x = abs_x + layout.location.x;
     let abs_y = abs_y + layout.location.y;
 

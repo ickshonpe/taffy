@@ -3,6 +3,8 @@ mod alignment;
 mod dimension;
 mod flex;
 
+use bevy::prelude::Component;
+
 pub use self::alignment::{AlignContent, AlignItems, AlignSelf, JustifyContent, JustifyItems, JustifySelf};
 pub use self::dimension::{AvailableSpace, Dimension, LengthPercentage, LengthPercentageAuto};
 pub use self::flex::{FlexDirection, FlexWrap};
@@ -89,6 +91,7 @@ impl Default for Position {
 /// this [introduction to the box model](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Box_Model/Introduction_to_the_CSS_box_model).
 ///
 /// If the behavior does not match the flexbox layout algorithm on the web, please file a bug!
+#[derive(Component)]
 #[derive(Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(default))]

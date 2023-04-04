@@ -36,7 +36,7 @@ fn print_node(tree: &impl LayoutTree, node: Node, has_sibling: bool, lines_strin
         y = layout.location.y,
         width = layout.size.width,
         height = layout.size.height,
-        key = node.data(),
+        key = node,
     );
     let bar = if has_sibling { "│   " } else { "    " };
     let new_string = lines_string + bar;

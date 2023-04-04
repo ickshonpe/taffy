@@ -43,6 +43,7 @@ impl From<Size<f32>> for SizeAndBaselines {
 }
 
 /// The final result of a layout algorithm for a single [`Node`](crate::node::Node).
+#[derive(bevy::prelude::Component)]
 #[derive(Debug, Copy, Clone)]
 pub struct Layout {
     /// The relative ordering of the node
@@ -78,6 +79,7 @@ impl Layout {
 }
 
 /// Cached intermediate layout results
+#[derive(bevy::prelude::Component)]
 #[derive(Debug, Clone, Copy)]
 pub struct Cache {
     /// The initial cached size of the node itself
