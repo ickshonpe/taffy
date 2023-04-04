@@ -2072,13 +2072,13 @@ mod tests {
         math::MaybeMath,
         resolve::ResolveOrZero,
         style::{FlexWrap, Style},
-        Taffy,
+        node::{TaffyWorld, Taffy},
     };
 
     // Make sure we get correct constants
     #[test]
     fn correct_constants() {
-        let mut tree = Taffy::with_capacity(16);
+        let mut tree = Taffy::new();
 
         let style = Style::default();
         let node_id = tree.new_leaf(style.clone()).unwrap();
@@ -2086,7 +2086,7 @@ mod tests {
         let node_size = Size::NONE;
         let parent_size = Size::NONE;
 
-        let constants = super::compute_constants(tree.style(node_id).unwrap(), node_size, parent_size);
+        let constants = super::compute_constants(crate::tree::LayoutTree::style(&tree, node_id), node_size, parent_size);
 
         assert!(constants.dir == style.flex_direction);
         assert!(constants.is_row == style.flex_direction.is_row());

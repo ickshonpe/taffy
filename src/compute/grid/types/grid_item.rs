@@ -7,11 +7,11 @@ use crate::geometry::{Line, Rect, Size};
 use crate::layout::SizingMode;
 use crate::math::MaybeMath;
 use crate::node::Node;
-use crate::prelude::LayoutTree;
 use crate::resolve::{MaybeResolve, ResolveOrZero};
 use crate::style::{
     AlignItems, AlignSelf, AvailableSpace, LengthPercentageAuto, MaxTrackSizingFunction, MinTrackSizingFunction, Style,
 };
+use crate::tree::LayoutTree;
 use core::ops::Range;
 
 /// Represents a single grid item

@@ -43,13 +43,13 @@ fn main() -> Result<(), taffy::error::TaffyError> {
         Size { height: AvailableSpace::Definite(100.0), width: AvailableSpace::Definite(100.0) },
     )?;
 
-    println!("node: {:#?}", taffy.layout(container)?);
+    println!("node: {:#?}", taffy::node::TaffyWorld::layout(&taffy, container)?);
 
-    println!("div1: {:#?}", taffy.layout(div1)?);
-    println!("div2: {:#?}", taffy.layout(div2)?);
+    println!("div1: {:#?}", taffy::node::TaffyWorld::layout(&taffy, div1)?);
+    println!("div2: {:#?}", taffy::node::TaffyWorld::layout(&taffy, div2)?);
 
-    println!("child1: {:#?}", taffy.layout(child_t1)?);
-    println!("child2: {:#?}", taffy.layout(child_t2)?);
+    println!("child1: {:#?}", taffy::node::TaffyWorld::layout(&taffy, child_t1)?);
+    println!("child2: {:#?}", taffy::node::TaffyWorld::layout(&taffy, child_t2)?);
 
     Ok(())
 }

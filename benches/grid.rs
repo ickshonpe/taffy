@@ -2,6 +2,7 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
+use taffy::node::Taffy;
 use std::iter;
 use taffy::prelude::*;
 use taffy::style::Style;

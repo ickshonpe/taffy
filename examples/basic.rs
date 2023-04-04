@@ -1,7 +1,9 @@
+use taffy::node::TaffyWorld;
 use taffy::prelude::*;
 
 fn main() -> Result<(), taffy::error::TaffyError> {
     let mut taffy = Taffy::new();
+    
 
     let child = taffy.new_leaf(Style {
         size: Size { width: Dimension::Percent(0.5), height: Dimension::Auto },
@@ -25,8 +27,8 @@ fn main() -> Result<(), taffy::error::TaffyError> {
     // or just use undefined for 100 x 100
     // taffy.compute_layout(node, Size::NONE)?;
 
-    println!("node: {:#?}", taffy.layout(node)?);
-    println!("child: {:#?}", taffy.layout(child)?);
+    println!("node: {:#?}", TaffyWorld::layout(&taffy, node)?);
+    println!("child: {:#?}", TaffyWorld::layout(&taffy, child)?);
 
     Ok(())
 }

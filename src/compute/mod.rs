@@ -411,8 +411,10 @@ fn round_layout(tree: &mut impl LayoutTree, node: Node, abs_x: f32, abs_y: f32) 
 mod tests {
     use super::perform_hidden_layout;
     use crate::geometry::{Point, Size};
+    use crate::layout::Layout;
+    use crate::node::TaffyWorld;
     use crate::style::{Display, Style};
-    use crate::Taffy;
+    use crate::prelude::Taffy;
 
     #[test]
     fn hidden_layout_should_hide_recursively() {
@@ -438,11 +440,10 @@ mod tests {
 
         // Whatever size and display-mode the nodes had previously,
         // all layouts should resolve to ZERO due to the root's DISPLAY::NONE
-        for (node, _) in taffy.nodes.iter().filter(|(node, _)| *node != root) {
-            if let Ok(layout) = taffy.layout(node) {
-                assert_eq!(layout.size, Size::zero());
-                assert_eq!(layout.location, Point::zero());
-            }
+        
+        for layout in taffy.world_mut().query::<&Layout>().iter(&taffy) {
+            assert_eq!(layout.size, Size::zero());
+            assert_eq!(layout.location, Point::zero());
         }
     }
 }

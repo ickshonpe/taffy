@@ -1,6 +1,7 @@
 //! UI [`Node`] types and related data structures.
 //!
 //! Layouts are composed of multiple nodes, which live in a tree-like data structure.
+use core::iter::Empty;
 use std::process::Child;
 
 
@@ -12,16 +13,19 @@ use bevy::prelude::*;
 /// A node in a layout.
 pub type Node = Entity;
 
+pub type Taffy = World;
+
 use crate::data::CACHE_SIZE;
 use crate::error::{TaffyError, TaffyResult};
 use crate::geometry::Size;
 use crate::layout::{Cache, Layout};
-use crate::prelude::LayoutTree;
+
 use crate::style::{AvailableSpace, Style};
 #[cfg(any(feature = "std", feature = "alloc"))]
 use crate::sys::Box;
 use crate::sys::{new_vec_with_capacity, ChildrenVec, Vec};
 use crate::error;
+use crate::tree::LayoutTree;
 
 /// A function type that can be used in a [`MeasureFunc`]
 ///
@@ -57,6 +61,9 @@ impl Default for TaffyConfig {
 #[derive(Component)]
 pub struct NeedsMeasure(pub bool);
 
+const EMPTY_SLICE: &'static [Entity] = &[];
+
+
 /// cached size layout info something
 #[derive(Component, Default, Deref, DerefMut)]
 pub struct SizeCache(pub [Option<Cache>; CACHE_SIZE]);
@@ -64,14 +71,14 @@ pub struct SizeCache(pub [Option<Cache>; CACHE_SIZE]);
 impl LayoutTree for World {
     type ChildIter<'a> = core::slice::Iter<'a, Entity>;
 
-    fn children(&self, node: Node) -> Self::ChildIter<'_> {
-        self.get::<Children>(node).unwrap().iter()
-        //self.children[node].iter()
+    fn children(&self, node: Entity) -> Self::ChildIter<'_> {
+        self.get::<Children>(node)
+            .map(|children| children.iter())
+            .unwrap_or_else(|| { EMPTY_SLICE.iter() })
     }
 
     fn child_count(&self, node: Node) -> usize {
-        self.children(node).count()
-        //self.children[node].len()
+        self.get::<Children>(node).map(|children| children.iter().count()).unwrap_or(0)
     }
 
     fn is_childless(&self, node: Node) -> bool {
@@ -119,7 +126,8 @@ impl LayoutTree for World {
     }
 
     fn needs_measure(&self, node: Node) -> bool {
-        self.get::<NeedsMeasure>(node).unwrap().0 && self.entity(node).contains::<MeasureFunc>()
+        self.get::<NeedsMeasure>(node).unwrap().0 
+        && self.entity(node).contains::<MeasureFunc>()
     }
 
     fn cache_mut(&mut self, node: Node) -> Mut<'_, SizeCache> {
@@ -131,15 +139,20 @@ impl LayoutTree for World {
     }
 }
 
-pub trait TaffyWorld : LayoutTree {
+pub fn init_ui(world: &mut World) {
+    world.init_resource::<TaffyConfig>();
+}
+
+pub trait TaffyWorld {
     fn world(&self) -> &World;
     fn world_mut(&mut self) -> &mut World;
 
-    fn setup(&mut self) {
-        self.world_mut().init_resource::<TaffyConfig>();
-    }
     fn enable_rounding(&mut self) {
         self.world_mut().get_resource_mut::<TaffyConfig>().unwrap().use_rounding = true;
+    }
+
+    fn style(&self, node: Node) -> TaffyResult<&Style> {
+        Ok(self.world().get::<Style>(node).unwrap())
     }
 
     fn disable_rounding(&mut self) {
@@ -166,7 +179,6 @@ pub trait TaffyWorld : LayoutTree {
             NeedsMeasure(true),
             SizeCache::default(),
             measure,
-            
         )).id())
     }
 
@@ -192,7 +204,9 @@ pub trait TaffyWorld : LayoutTree {
                 Layout,
                 SizeCache,
                 MeasureFunc,
+                NeedsMeasure,
             )>();
+            commands.entity(entity).remove_parent().clear_children();
         }
     
         command_queue.apply(self.world_mut());        
@@ -210,9 +224,12 @@ pub trait TaffyWorld : LayoutTree {
                 Layout,
                 NeedsMeasure,
                 SizeCache,
-                Parent,
-                Children
+                MeasureFunc,
             )>();
+        let mut command_queue = CommandQueue::default();
+        let mut commands = Commands::new(&mut command_queue, &self.world());
+        commands.entity(node).remove_parent().clear_children();
+        command_queue.apply(self.world_mut());
         Ok(node)
     }
 
@@ -281,6 +298,20 @@ pub trait TaffyWorld : LayoutTree {
         Ok(old_child)
     }
 
+    fn remove_child_at_index(&mut self, parent: Node, child_index: usize) -> TaffyResult<Node> {
+        let Ok(children) = self.children(parent) else {
+            return Err(error::TaffyError::ChildIndexOutOfBounds  { parent, child_index, child_count: 0 });
+        };
+        if child_index >= children.len() {
+            return Err(error::TaffyError::ChildIndexOutOfBounds { parent, child_index, child_count: children.len() });
+        }
+
+        let child = children[child_index];
+        self.world_mut().entity_mut(parent).remove_children(&[child]);
+        self.mark_dirty_internal(parent)?;
+        Ok(child)
+    }
+
     /// Returns the child [`Node`] of the parent `node` at the provided `child_index`
     fn child_at_index(&self, parent: Node, child_index: usize) -> TaffyResult<Node> {
         let children = self.world().entity(parent).get::<Children>().unwrap();
@@ -294,12 +325,18 @@ pub trait TaffyWorld : LayoutTree {
 
     /// Returns the number of children of the `parent` [`Node`]
     fn child_count(&self, parent: Node) -> TaffyResult<usize> {
-        Ok(self.world().entity(parent).get::<Children>().unwrap().len())
+        Ok(
+            if let Some(children) = self.world().entity(parent).get::<Children>() {
+                children.len()
+            } else {
+                0
+            }
+        )
     }
 
     /// Returns a list of children that belong to the parent [`Node`]
     fn children_list(&self, parent: Node) -> TaffyResult<Vec<Node>> {
-        Ok(self.children(parent).copied().collect::<_>())
+        Ok(self.world().get::<Children>(parent).unwrap().iter().copied().collect::<Vec<_>>())        
     }
 
     /// Sets the [`Style`] of the provided `node`
@@ -309,7 +346,19 @@ pub trait TaffyWorld : LayoutTree {
         Ok(())
     }
 
+    /// Returns the [`Style`] of the provided `node`
+    fn layout(&self, node: Node) -> TaffyResult<&Layout> {
+        Ok(self.world().entity(node).get::<Layout>().unwrap())
+    }
 
+    /// Returns the kids of the provided `node`
+    fn children(&self, parent: Node) -> TaffyResult<Vec<Node>> {
+        if let Some(children) = self.world().entity(parent).get::<Children>() {
+            Ok(children.iter().copied().collect::<Vec<_>>())
+        } else {
+            Ok(vec![])
+        }
+    }
 
     /// Marks the layout computation of this node and its children as outdated
     ///
@@ -364,30 +413,13 @@ impl TaffyWorld for World {
 mod tests {
     #![allow(clippy::bool_assert_comparison)]
 
-    use super::*;
-    use crate::style::{Dimension, Display, FlexDirection};
+    use super::TaffyWorld;
+    use crate::node::{Taffy, MeasureFunc, Node, init_ui};
+    use crate::prelude::Size;
+    use crate::style::{Dimension, Display, FlexDirection, Style, AvailableSpace};
     use crate::style_helpers::*;
     use crate::sys;
-
-    #[test]
-    fn new_should_allocate_default_capacity() {
-        const DEFAULT_CAPACITY: usize = 16; // This is the capacity defined in the `impl Default`
-        let taffy = Taffy::new();
-
-        assert!(taffy.children.capacity() >= DEFAULT_CAPACITY);
-        assert!(taffy.parents.capacity() >= DEFAULT_CAPACITY);
-        assert!(taffy.nodes.capacity() >= DEFAULT_CAPACITY);
-    }
-
-    #[test]
-    fn test_with_capacity() {
-        const CAPACITY: usize = 8;
-        let taffy = Taffy::with_capacity(CAPACITY);
-
-        assert!(taffy.children.capacity() >= CAPACITY);
-        assert!(taffy.parents.capacity() >= CAPACITY);
-        assert!(taffy.nodes.capacity() >= CAPACITY);
-    }
+    
 
     #[test]
     fn test_new_leaf() {
@@ -472,10 +504,18 @@ mod tests {
     #[test]
     fn set_measure() {
         let mut taffy = Taffy::new();
+        init_ui(&mut taffy);
         let node = taffy
-            .new_leaf_with_measure(Style::default(), MeasureFunc::Raw(|_, _| Size { width: 200.0, height: 200.0 }))
+            .new_leaf_with_measure(Style::default(), MeasureFunc::Raw(|_, _| {
+                println!("measure called");
+                Size { width: 200.0, height: 200.0 }
+            }))
             .unwrap();
+        println!("needs measure: {}", crate::tree::LayoutTree::needs_measure(&taffy, node));
+        println!("has measure func: {}", taffy.entity(node).contains::<MeasureFunc>());
+
         taffy.compute_layout(node, Size::MAX_CONTENT).unwrap();
+        println!("layout: {:?}", taffy.layout(node).unwrap());
         assert_eq!(taffy.layout(node).unwrap().size.width, 200.0);
 
         taffy.set_measure(node, Some(MeasureFunc::Raw(|_, _| Size { width: 100.0, height: 100.0 }))).unwrap();
@@ -486,6 +526,7 @@ mod tests {
     #[test]
     fn set_measure_of_previously_unmeasured_node() {
         let mut taffy = Taffy::new();
+        init_ui(&mut taffy);
         let node = taffy.new_leaf(Style::default()).unwrap();
         taffy.compute_layout(node, Size::MAX_CONTENT).unwrap();
         assert_eq!(taffy.layout(node).unwrap().size.width, 0.0);
@@ -656,8 +697,9 @@ mod tests {
     }
 
     #[test]
-    fn test_mark_dirty() {
+    fn test_mark_dirty() {        
         let mut taffy = Taffy::new();
+        init_ui(&mut taffy);
         let child0 = taffy.new_leaf(Style::default()).unwrap();
         let child1 = taffy.new_leaf(Style::default()).unwrap();
         let node = taffy.new_with_children(Style::default(), &[child0, child1]).unwrap();
@@ -668,13 +710,13 @@ mod tests {
         assert_eq!(taffy.dirty(child1).unwrap(), false);
         assert_eq!(taffy.dirty(node).unwrap(), false);
 
-        taffy.mark_dirty(node).unwrap();
+        crate::tree::LayoutTree::mark_dirty(&mut taffy, node).unwrap();
         assert_eq!(taffy.dirty(child0).unwrap(), false);
         assert_eq!(taffy.dirty(child1).unwrap(), false);
         assert_eq!(taffy.dirty(node).unwrap(), true);
 
         taffy.compute_layout(node, Size::MAX_CONTENT).unwrap();
-        taffy.mark_dirty(child0).unwrap();
+        crate::tree::LayoutTree::mark_dirty(&mut taffy, child0).unwrap();
         assert_eq!(taffy.dirty(child0).unwrap(), true);
         assert_eq!(taffy.dirty(child1).unwrap(), false);
         assert_eq!(taffy.dirty(node).unwrap(), true);
@@ -683,6 +725,7 @@ mod tests {
     #[test]
     fn compute_layout_should_produce_valid_result() {
         let mut taffy = Taffy::new();
+        init_ui(&mut taffy);
         let node_result = taffy.new_leaf(Style {
             size: Size { width: Dimension::Points(10f32), height: Dimension::Points(10f32) },
             ..Default::default()

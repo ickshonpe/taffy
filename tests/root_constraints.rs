@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod root_constraints {
+    use taffy::prelude::TaffyWorld;
     use taffy::style::AvailableSpace;
 
     #[test]

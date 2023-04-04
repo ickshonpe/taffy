@@ -21,7 +21,7 @@ fn build_random_leaf(taffy: &mut Taffy) -> Node {
 
 /// A tree with many children that have shallow depth
 fn build_taffy_flat_hierarchy(total_node_count: u32, use_with_capacity: bool) -> (Taffy, Node) {
-    let mut taffy = if use_with_capacity { Taffy::with_capacity(total_node_count as usize) } else { Taffy::new() };
+    let mut taffy =  Taffy::new();
     let mut rng = ChaCha8Rng::seed_from_u64(12345);
     let mut children = Vec::new();
     let mut node_count = 0;

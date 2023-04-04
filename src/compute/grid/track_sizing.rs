@@ -6,12 +6,13 @@ use crate::compute::{GenericAlgorithm, LayoutAlgorithm};
 use crate::geometry::Size;
 use crate::layout::SizingMode;
 use crate::math::MaybeMath;
-use crate::prelude::{LayoutTree, TaffyMinContent};
+use crate::prelude::{TaffyMinContent};
 use crate::resolve::ResolveOrZero;
 use crate::style::{
     AlignContent, AlignSelf, AvailableSpace, LengthPercentage, MaxTrackSizingFunction, MinTrackSizingFunction,
 };
 use crate::sys::{f32_max, f32_min, Vec};
+use crate::tree::LayoutTree;
 use core::cmp::Ordering;
 
 /// Takes an axis, and a list of grid items sorted firstly by whether they cross a flex track
