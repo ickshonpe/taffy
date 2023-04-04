@@ -2,29 +2,31 @@
 #[cfg(feature = "std")]
 use core::fmt::{Display, Formatter, Result};
 
-use crate::node::Node;
+use slotmap::DefaultKey;
+
+use crate::node::NodeKey;
 
 /// The error Taffy generates on invalid operations
 pub type TaffyResult<T> = core::result::Result<T, TaffyError>;
 
 /// An error that occurs while trying to access or modify a [`Node`]'s children by index.
 #[derive(Debug)]
-pub enum TaffyError {
+pub enum TaffyError<K: NodeKey = DefaultKey> {
     /// The parent [`Node`] does not have a child at `child_index`. It only has `child_count` children
     ChildIndexOutOfBounds {
         /// The parent node whose child was being looked up
-        parent: Node,
+        parent: K,
         /// The index that was looked up
         child_index: usize,
         /// The total number of children the parent has
         child_count: usize,
     },
     /// The parent [`Node`] was not found in the [`Taffy`](crate::Taffy) instance.
-    InvalidParentNode(Node),
+    InvalidParentNode(K),
     /// The child [`Node`] was not found in the [`Taffy`](crate::Taffy) instance.
-    InvalidChildNode(Node),
+    InvalidChildNode(K),
     /// The supplied [`Node`] was not found in the [`Taffy`](crate::Taffy) instance.
-    InvalidInputNode(Node),
+    InvalidInputNode(K),
 }
 
 #[cfg(feature = "std")]

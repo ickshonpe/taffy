@@ -17,12 +17,12 @@ use slotmap::SlotMap;
 use yoga_helpers::yg;
 
 /// Build a random leaf node
-fn build_random_leaf(taffy: &mut Taffy, rng: &mut ChaCha8Rng) -> Node {
+fn build_random_leaf(taffy: &mut Taffy, rng: &mut ChaCha8Rng) -> NodeKey {
     taffy.new_with_children(Style::random(rng), &[]).unwrap()
 }
 
 /// A tree with many children that have shallow depth
-fn build_taffy_flat_hierarchy(total_node_count: u32) -> (Taffy, Node) {
+fn build_taffy_flat_hierarchy(total_node_count: u32) -> (Taffy, NodeKey) {
     let mut taffy = Taffy::new();
     let mut rng = ChaCha8Rng::seed_from_u64(12345);
     let mut children = Vec::new();
@@ -30,7 +30,7 @@ fn build_taffy_flat_hierarchy(total_node_count: u32) -> (Taffy, Node) {
 
     while node_count < total_node_count {
         let sub_children_count = rng.gen_range(1..=4);
-        let sub_children: Vec<Node> =
+        let sub_children: Vec<NodeKey> =
             (0..sub_children_count).map(|_| build_random_leaf(&mut taffy, &mut rng)).collect();
         let node = taffy.new_with_children(Style::random(&mut rng), &sub_children).unwrap();
 
@@ -44,7 +44,7 @@ fn build_taffy_flat_hierarchy(total_node_count: u32) -> (Taffy, Node) {
 
 #[cfg(feature = "yoga_benchmark")]
 /// A tree with many children that have shallow depth
-fn build_yoga_flat_hierarchy(total_node_count: u32) -> (yg::YogaTree, Node) {
+fn build_yoga_flat_hierarchy(total_node_count: u32) -> (yg::YogaTree, NodeKey) {
     let mut tree = SlotMap::new();
     let mut rng = ChaCha8Rng::seed_from_u64(12345);
     let mut children = Vec::new();
@@ -52,7 +52,7 @@ fn build_yoga_flat_hierarchy(total_node_count: u32) -> (yg::YogaTree, Node) {
 
     while node_count < total_node_count {
         let sub_children_count = rng.gen_range(1..=4);
-        let sub_children: Vec<Node> = (0..sub_children_count)
+        let sub_children: Vec<NodeKey> = (0..sub_children_count)
             .map(|_| yoga_helpers::new_with_children(&mut tree, &Style::random(&mut rng), vec![]))
             .collect();
         let node = yoga_helpers::new_with_children(&mut tree, &Style::random(&mut rng), sub_children);
@@ -66,12 +66,12 @@ fn build_yoga_flat_hierarchy(total_node_count: u32) -> (yg::YogaTree, Node) {
 }
 
 /// A tree with a higher depth for a more realistic scenario
-fn build_taffy_deep_hierarchy(node_count: u32, branching_factor: u32) -> (Taffy, Node) {
+fn build_taffy_deep_hierarchy(node_count: u32, branching_factor: u32) -> (Taffy, NodeKey) {
     let mut rng = ChaCha8Rng::seed_from_u64(12345);
     let mut build_leaf_node = |taffy: &mut Taffy| build_random_leaf(taffy, &mut rng);
     let mut rng = ChaCha8Rng::seed_from_u64(12345);
     let mut build_flex_node =
-        |taffy: &mut Taffy, children: Vec<Node>| taffy.new_with_children(Style::random(&mut rng), &children).unwrap();
+        |taffy: &mut Taffy, children: Vec<NodeKey>| taffy.new_with_children(Style::random(&mut rng), &children).unwrap();
 
     let mut taffy = Taffy::new();
     let tree = build_deep_tree(&mut taffy, node_count, branching_factor, &mut build_leaf_node, &mut build_flex_node);
@@ -81,12 +81,12 @@ fn build_taffy_deep_hierarchy(node_count: u32, branching_factor: u32) -> (Taffy,
 
 #[cfg(feature = "yoga_benchmark")]
 /// A tree with a higher depth for a more realistic scenario
-fn build_yoga_deep_hierarchy(node_count: u32, branching_factor: u32) -> (yg::YogaTree, Node) {
+fn build_yoga_deep_hierarchy(node_count: u32, branching_factor: u32) -> (yg::YogaTree, NodeKey) {
     let mut rng = ChaCha8Rng::seed_from_u64(12345);
     let mut build_leaf_node =
         |tree: &mut yg::YogaTree| yoga_helpers::new_with_children(tree, &Style::random(&mut rng), vec![]);
     let mut rng = ChaCha8Rng::seed_from_u64(12345);
-    let mut build_flex_node = |tree: &mut yg::YogaTree, children: Vec<Node>| {
+    let mut build_flex_node = |tree: &mut yg::YogaTree, children: Vec<NodeKey>| {
         yoga_helpers::new_with_children(tree, &Style::random(&mut rng), children)
     };
 
@@ -98,7 +98,7 @@ fn build_yoga_deep_hierarchy(node_count: u32, branching_factor: u32) -> (yg::Yog
 }
 
 /// A deep tree that matches the shape and styling that yoga use on their benchmarks
-fn build_taffy_huge_nested_hierarchy(node_count: u32, branching_factor: u32) -> (Taffy, Node) {
+fn build_taffy_huge_nested_hierarchy(node_count: u32, branching_factor: u32) -> (Taffy, NodeKey) {
     let style = Style {
         size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
         flex_grow: 1.0,
@@ -106,7 +106,7 @@ fn build_taffy_huge_nested_hierarchy(node_count: u32, branching_factor: u32) -> 
     };
     let mut build_leaf_node = |taffy: &mut Taffy| taffy.new_leaf(style.clone()).unwrap();
     let mut build_flex_node =
-        |taffy: &mut Taffy, children: Vec<Node>| taffy.new_with_children(style.clone(), &children).unwrap();
+        |taffy: &mut Taffy, children: Vec<NodeKey>| taffy.new_with_children(style.clone(), &children).unwrap();
 
     let mut taffy = Taffy::new();
     let tree = build_deep_tree(&mut taffy, node_count, branching_factor, &mut build_leaf_node, &mut build_flex_node);
@@ -116,18 +116,18 @@ fn build_taffy_huge_nested_hierarchy(node_count: u32, branching_factor: u32) -> 
 
 #[cfg(feature = "yoga_benchmark")]
 /// A deep tree that matches the shape and styling that yoga use on their benchmarks
-fn build_yoga_huge_nested_hierarchy(node_count: u32, branching_factor: u32) -> (yg::YogaTree, Node) {
+fn build_yoga_huge_nested_hierarchy(node_count: u32, branching_factor: u32) -> (yg::YogaTree, NodeKey) {
     let style = Style {
         size: Size { width: Dimension::Points(10.0), height: Dimension::Points(10.0) },
         flex_grow: 1.0,
         ..Default::default()
     };
-    let mut build_leaf_node = |tree: &mut yg::YogaTree| -> Node {
+    let mut build_leaf_node = |tree: &mut yg::YogaTree| -> NodeKey {
         let mut node = yg::Node::new();
         yoga_helpers::apply_taffy_style(&mut node, &style.clone());
         tree.insert(node)
     };
-    let mut build_flex_node = |tree: &mut yg::YogaTree, children: Vec<Node>| -> Node {
+    let mut build_flex_node = |tree: &mut yg::YogaTree, children: Vec<NodeKey>| -> NodeKey {
         let mut node = yg::Node::new();
         yoga_helpers::apply_taffy_style(&mut node, &style.clone());
         for (i, child) in children.into_iter().enumerate() {

@@ -4,7 +4,7 @@ use crate::axis::{AbsoluteAxis, AbstractAxis, InBothAbsAxis};
 use crate::geometry::{Line, Point, Rect, Size};
 use crate::layout::{Layout, RunMode, SizeAndBaselines, SizingMode};
 use crate::math::MaybeMath;
-use crate::node::Node;
+use crate::node::NodeKey;
 use crate::resolve::{MaybeResolve, ResolveOrZero};
 use crate::style::{AlignContent, AlignItems, AlignSelf, AvailableSpace, Display, Position};
 use crate::style_helpers::*;
@@ -24,6 +24,8 @@ pub(crate) use types::{GridCoordinate, GridLine, OriginZeroLine};
 #[cfg(feature = "debug")]
 use crate::debug::NODE_LOGGER;
 
+use self::types::GridItem;
+
 use super::{GenericAlgorithm, LayoutAlgorithm};
 
 mod alignment;
@@ -36,12 +38,12 @@ mod util;
 
 /// The public interface to Taffy's CSS Grid algorithm implementation
 pub(crate) struct CssGridAlgorithm;
-impl LayoutAlgorithm for CssGridAlgorithm {
+impl <K: NodeKey> LayoutAlgorithm<K> for CssGridAlgorithm {
     const NAME: &'static str = "CSS GRID";
 
     fn perform_layout(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -51,8 +53,8 @@ impl LayoutAlgorithm for CssGridAlgorithm {
     }
 
     fn measure_size(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -68,15 +70,15 @@ impl LayoutAlgorithm for CssGridAlgorithm {
 ///   - Placing items (which also resolves the implicit grid)
 ///   - Track (row/column) sizing
 ///   - Alignment & Final item placement
-pub fn compute(
-    tree: &mut impl LayoutTree,
-    node: Node,
+pub fn compute<K: NodeKey>(
+    tree: &mut impl LayoutTree<K>,
+    node: K,
     known_dimensions: Size<Option<f32>>,
     parent_size: Size<Option<f32>>,
     available_space: Size<AvailableSpace>,
     run_mode: RunMode,
 ) -> SizeAndBaselines {
-    let get_child_styles_iter = |node| tree.children(node).map(|child_node: &Node| tree.style(*child_node));
+    let get_child_styles_iter = |node| tree.children(node).map(|child_node: &K| tree.style(*child_node));
     let style = tree.style(node).clone();
     let child_styles_iter = get_child_styles_iter(node);
 
@@ -93,7 +95,7 @@ pub fn compute(
 
     // 2. Grid Item Placement
     // Match items (children) to a definite grid position (row start/end and column start/end position)
-    let mut items = Vec::with_capacity(tree.child_count(node));
+    let mut items: Vec<GridItem<K>> = Vec::with_capacity(tree.child_count(node));
     let mut cell_occupancy_matrix = CellOccupancyMatrix::with_track_counts(est_col_counts, est_row_counts);
     let in_flow_children_iter = || {
         tree.children(node)

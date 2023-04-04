@@ -2,17 +2,17 @@ use core::fmt::{Debug, Display, Write};
 use slotmap::Key;
 use std::sync::Mutex;
 
-use crate::node::Node;
+use crate::node::NodeKey;
 use crate::style;
 use crate::tree::LayoutTree;
 
 /// Prints a debug representation of the computed layout for a tree of nodes, starting with the passed root node.
-pub fn print_tree(tree: &impl LayoutTree, root: Node) {
+pub fn print_tree<K: NodeKey>(tree: &impl LayoutTree<K>, root: K) {
     println!("TREE");
     print_node(tree, root, false, String::new());
 }
 
-fn print_node(tree: &impl LayoutTree, node: Node, has_sibling: bool, lines_string: String) {
+fn print_node<K: NodeKey>(tree: &impl LayoutTree<K>, node: K, has_sibling: bool, lines_string: String) {
     let layout = tree.layout(node);
     let style = tree.style(node);
 
@@ -36,7 +36,7 @@ fn print_node(tree: &impl LayoutTree, node: Node, has_sibling: bool, lines_strin
         y = layout.location.y,
         width = layout.size.width,
         height = layout.size.height,
-        key = node.data(),
+        key = node,
     );
     let bar = if has_sibling { "│   " } else { "    " };
     let new_string = lines_string + bar;

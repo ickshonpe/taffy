@@ -1,4 +1,6 @@
 //! Contains GridItem used to represent a single grid item during layout
+use slotmap::DefaultKey;
+
 use super::GridTrack;
 use crate::axis::AbstractAxis;
 use crate::compute::grid::OriginZeroLine;
@@ -6,7 +8,7 @@ use crate::compute::{GenericAlgorithm, LayoutAlgorithm};
 use crate::geometry::{Line, Rect, Size};
 use crate::layout::SizingMode;
 use crate::math::MaybeMath;
-use crate::node::Node;
+use crate::node::NodeKey;
 use crate::prelude::LayoutTree;
 use crate::resolve::{MaybeResolve, ResolveOrZero};
 use crate::style::{
@@ -16,9 +18,9 @@ use core::ops::Range;
 
 /// Represents a single grid item
 #[derive(Debug)]
-pub(in super::super) struct GridItem {
+pub(in super::super) struct GridItem<K: NodeKey = DefaultKey> {
     /// The id of the Node that this item represents
-    pub node: Node,
+    pub node: K,
 
     /// The order of the item in the children array
     ///
@@ -72,10 +74,10 @@ pub(in super::super) struct GridItem {
     pub max_content_contribution_cache: Size<Option<f32>>,
 }
 
-impl GridItem {
+impl <K: NodeKey> GridItem<K> {
     /// Create a new item given a concrete placement in both axes
     pub fn new_with_placement_style_and_order(
-        node: Node,
+        node: K,
         col_span: Line<OriginZeroLine>,
         row_span: Line<OriginZeroLine>,
         style: &Style,
@@ -207,7 +209,7 @@ impl GridItem {
     /// allow percentage sizes further down the tree to resolve properly in some cases
     fn known_dimensions(
         &self,
-        tree: &mut impl LayoutTree,
+        tree: &mut impl LayoutTree<K>,
         inner_node_size: Size<Option<f32>>,
         grid_area_size: Size<Option<f32>>,
     ) -> Size<Option<f32>> {
@@ -323,7 +325,7 @@ impl GridItem {
     pub fn min_content_contribution(
         &self,
         axis: AbstractAxis,
-        tree: &mut impl LayoutTree,
+        tree: &mut impl LayoutTree<K>,
         available_space: Size<Option<f32>>,
         inner_node_size: Size<Option<f32>>,
     ) -> f32 {
@@ -347,7 +349,7 @@ impl GridItem {
     pub fn min_content_contribution_cached(
         &mut self,
         axis: AbstractAxis,
-        tree: &mut impl LayoutTree,
+        tree: &mut impl LayoutTree<K>,
         available_space: Size<Option<f32>>,
         inner_node_size: Size<Option<f32>>,
     ) -> f32 {
@@ -362,7 +364,7 @@ impl GridItem {
     pub fn max_content_contribution(
         &self,
         axis: AbstractAxis,
-        tree: &mut impl LayoutTree,
+        tree: &mut impl LayoutTree<K>,
         available_space: Size<Option<f32>>,
         inner_node_size: Size<Option<f32>>,
     ) -> f32 {
@@ -386,7 +388,7 @@ impl GridItem {
     pub fn max_content_contribution_cached(
         &mut self,
         axis: AbstractAxis,
-        tree: &mut impl LayoutTree,
+        tree: &mut impl LayoutTree<K>,
         available_space: Size<Option<f32>>,
         inner_node_size: Size<Option<f32>>,
     ) -> f32 {
@@ -406,7 +408,7 @@ impl GridItem {
     /// See: https://www.w3.org/TR/css-grid-1/#min-size-auto
     pub fn minimum_contribution(
         &mut self,
-        tree: &mut impl LayoutTree,
+        tree: &mut impl LayoutTree<K>,
         axis: AbstractAxis,
         axis_tracks: &[GridTrack],
         known_dimensions: Size<Option<f32>>,
@@ -465,7 +467,7 @@ impl GridItem {
     #[inline(always)]
     pub fn minimum_contribution_cached(
         &mut self,
-        tree: &mut impl LayoutTree,
+        tree: &mut impl LayoutTree<K>,
         axis: AbstractAxis,
         axis_tracks: &[GridTrack],
         known_dimensions: Size<Option<f32>>,

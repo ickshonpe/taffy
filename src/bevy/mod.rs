@@ -1,5 +1,5 @@
-use bevy::prelude::*;
-use crate::prelude::LayoutTree;
+// use bevy::prelude::*;
+// use crate::prelude::LayoutTree;
 
 
 /// A tree of UI [`Nodes`](`Node`), suitable for UI layout
@@ -11,42 +11,42 @@ pub struct BevyTree {
 // impl LayoutTree for BevyTree {
 //     type ChildIter<'a> = core::slice::Iter<'a, Entity>;
 
-//     fn children(&self, node: Node) -> Self::ChildIter<'_> {
+//     fn children(&self, node: impl Node) -> Self::ChildIter<'_> {
 //         self.children[node].iter()
 //     }
 
-//     fn child_count(&self, node: Node) -> usize {
+//     fn child_count(&self, node: impl Node) -> usize {
 //         self.children[node].len()
 //     }
 
-//     fn is_childless(&self, node: Node) -> bool {
+//     fn is_childless(&self, node: impl Node) -> bool {
 //         self.children[node].is_empty()
 //     }
 
-//     fn parent(&self, node: Node) -> Option<Node> {
+//     fn parent(&self, node: impl Node) -> Option<Node> {
 //         self.parents.get(node).copied().flatten()
 //     }
 
-//     fn style(&self, node: Node) -> &Style {
+//     fn style(&self, node: impl Node) -> &Style {
 //         &self.nodes[node].style
 //     }
 
-//     fn layout(&self, node: Node) -> &Layout {
+//     fn layout(&self, node: impl Node) -> &Layout {
 //         &self.nodes[node].layout
 //     }
 
-//     fn layout_mut(&mut self, node: Node) -> &mut Layout {
+//     fn layout_mut(&mut self, node: impl Node) -> &mut Layout {
 //         &mut self.nodes[node].layout
 //     }
 
 //     #[inline(always)]
-//     fn mark_dirty(&mut self, node: Node) -> TaffyResult<()> {
+//     fn mark_dirty(&mut self, node: impl Node) -> TaffyResult<()> {
 //         self.mark_dirty_internal(node)
 //     }
 
 //     fn measure_node(
 //         &self,
-//         node: Node,
+//         node: impl Node,
 //         known_dimensions: Size<Option<f32>>,
 //         available_space: Size<AvailableSpace>,
 //     ) -> Size<f32> {
@@ -58,15 +58,15 @@ pub struct BevyTree {
 //         }
 //     }
 
-//     fn needs_measure(&self, node: Node) -> bool {
+//     fn needs_measure(&self, node: impl Node) -> bool {
 //         self.nodes[node].needs_measure && self.measure_funcs.get(node).is_some()
 //     }
 
-//     fn cache_mut(&mut self, node: Node, index: usize) -> &mut Option<Cache> {
+//     fn cache_mut(&mut self, node: impl Node, index: usize) -> &mut Option<Cache> {
 //         &mut self.nodes[node].size_cache[index]
 //     }
 
-//     fn child(&self, node: Node, id: usize) -> Node {
+//     fn child(&self, node: impl Node, id: usize) -> Node {
 //         self.children[node][id]
 //     }
 // }
@@ -154,7 +154,7 @@ pub struct BevyTree {
 //     /// Remove a specific [`Node`] from the tree and drops it
 //     ///
 //     /// Returns the id of the node removed.
-//     pub fn remove(&mut self, node: Node) -> TaffyResult<Node> {
+//     pub fn remove(&mut self, node: impl Node) -> TaffyResult<Node> {
 //         if let Some(parent) = self.parents[node] {
 //             if let Some(children) = self.children.get_mut(parent) {
 //                 children.retain(|f| *f != node);
@@ -169,7 +169,7 @@ pub struct BevyTree {
 //     }
 
 //     /// Sets the [`MeasureFunc`] of the associated node
-//     pub fn set_measure(&mut self, node: Node, measure: Option<MeasureFunc>) -> TaffyResult<()> {
+//     pub fn set_measure(&mut self, node: impl Node, measure: Option<MeasureFunc>) -> TaffyResult<()> {
 //         if let Some(measure) = measure {
 //             self.nodes[node].needs_measure = true;
 //             self.measure_funcs.insert(node, measure);
@@ -184,7 +184,7 @@ pub struct BevyTree {
 //     }
 
 //     /// Adds a `child` [`Node`] under the supplied `parent`
-//     pub fn add_child(&mut self, parent: Node, child: Node) -> TaffyResult<()> {
+//     pub fn add_child(&mut self, parent: impl Node, child: Node) -> TaffyResult<()> {
 //         self.parents[child] = Some(parent);
 //         self.children[parent].push(child);
 //         self.mark_dirty_internal(parent)?;
@@ -193,7 +193,7 @@ pub struct BevyTree {
 //     }
 
 //     /// Directly sets the `children` of the supplied `parent`
-//     pub fn set_children(&mut self, parent: Node, children: &[Node]) -> TaffyResult<()> {
+//     pub fn set_children(&mut self, parent: impl Node, children: &[Node]) -> TaffyResult<()> {
 //         // Remove node as parent from all its current children.
 //         for child in &self.children[parent] {
 //             self.parents[*child] = None;
@@ -214,7 +214,7 @@ pub struct BevyTree {
 //     /// Removes the `child` of the parent `node`
 //     ///
 //     /// The child is not removed from the tree entirely, it is simply no longer attached to its previous parent.
-//     pub fn remove_child(&mut self, parent: Node, child: Node) -> TaffyResult<Node> {
+//     pub fn remove_child(&mut self, parent: impl Node, child: Node) -> TaffyResult<Node> {
 //         let index = self.children[parent].iter().position(|n| *n == child).unwrap();
 //         self.remove_child_at_index(parent, index)
 //     }
@@ -222,7 +222,7 @@ pub struct BevyTree {
 //     /// Removes the child at the given `index` from the `parent`
 //     ///
 //     /// The child is not removed from the tree entirely, it is simply no longer attached to its previous parent.
-//     pub fn remove_child_at_index(&mut self, parent: Node, child_index: usize) -> TaffyResult<Node> {
+//     pub fn remove_child_at_index(&mut self, parent: impl Node, child_index: usize) -> TaffyResult<Node> {
 //         let child_count = self.children[parent].len();
 //         if child_index >= child_count {
 //             return Err(error::TaffyError::ChildIndexOutOfBounds { parent, child_index, child_count });
@@ -239,7 +239,7 @@ pub struct BevyTree {
 //     /// Replaces the child at the given `child_index` from the `parent` node with the new `child` node
 //     ///
 //     /// The child is not removed from the tree entirely, it is simply no longer attached to its previous parent.
-//     pub fn replace_child_at_index(&mut self, parent: Node, child_index: usize, new_child: Node) -> TaffyResult<Node> {
+//     pub fn replace_child_at_index(&mut self, parent: impl Node, child_index: usize, new_child: Node) -> TaffyResult<Node> {
 //         let child_count = self.children[parent].len();
 //         if child_index >= child_count {
 //             return Err(error::TaffyError::ChildIndexOutOfBounds { parent, child_index, child_count });
@@ -255,7 +255,7 @@ pub struct BevyTree {
 //     }
 
 //     /// Returns the child [`Node`] of the parent `node` at the provided `child_index`
-//     pub fn child_at_index(&self, parent: Node, child_index: usize) -> TaffyResult<Node> {
+//     pub fn child_at_index(&self, parent: impl Node, child_index: usize) -> TaffyResult<Node> {
 //         let child_count = self.children[parent].len();
 //         if child_index >= child_count {
 //             return Err(error::TaffyError::ChildIndexOutOfBounds { parent, child_index, child_count });
@@ -265,29 +265,29 @@ pub struct BevyTree {
 //     }
 
 //     /// Returns the number of children of the `parent` [`Node`]
-//     pub fn child_count(&self, parent: Node) -> TaffyResult<usize> {
+//     pub fn child_count(&self, parent: impl Node) -> TaffyResult<usize> {
 //         Ok(self.children[parent].len())
 //     }
 
 //     /// Returns a list of children that belong to the parent [`Node`]
-//     pub fn children(&self, parent: Node) -> TaffyResult<Vec<Node>> {
+//     pub fn children(&self, parent: impl Node) -> TaffyResult<Vec<Node>> {
 //         Ok(self.children[parent].iter().copied().collect::<_>())
 //     }
 
 //     /// Sets the [`Style`] of the provided `node`
-//     pub fn set_style(&mut self, node: Node, style: Style) -> TaffyResult<()> {
+//     pub fn set_style(&mut self, node: impl Node, style: Style) -> TaffyResult<()> {
 //         self.nodes[node].style = style;
 //         self.mark_dirty_internal(node)?;
 //         Ok(())
 //     }
 
 //     /// Gets the [`Style`] of the provided `node`
-//     pub fn style(&self, node: Node) -> TaffyResult<&Style> {
+//     pub fn style(&self, node: impl Node) -> TaffyResult<&Style> {
 //         Ok(&self.nodes[node].style)
 //     }
 
 //     /// Return this node layout relative to its parent
-//     pub fn layout(&self, node: Node) -> TaffyResult<&Layout> {
+//     pub fn layout(&self, node: impl Node) -> TaffyResult<&Layout> {
 //         Ok(&self.nodes[node].layout)
 //     }
 
@@ -296,7 +296,7 @@ pub struct BevyTree {
 //     /// Performs a recursive depth-first search up the tree until the root node is reached
 //     ///
 //     /// WARNING: this will stack-overflow if the tree contains a cycle
-//     fn mark_dirty_internal(&mut self, node: Node) -> TaffyResult<()> {
+//     fn mark_dirty_internal(&mut self, node: impl Node) -> TaffyResult<()> {
 //         /// WARNING: this will stack-overflow if the tree contains a cycle
 //         fn mark_dirty_recursive(
 //             nodes: &mut SlotMap<Node, NodeData>,
@@ -316,12 +316,12 @@ pub struct BevyTree {
 //     }
 
 //     /// Indicates whether the layout of this node (and its children) need to be recomputed
-//     pub fn dirty(&self, node: Node) -> TaffyResult<bool> {
+//     pub fn dirty(&self, node: impl Node) -> TaffyResult<bool> {
 //         Ok(self.nodes[node].size_cache.iter().all(|entry| entry.is_none()))
 //     }
 
 //     /// Updates the stored layout of the provided `node` and its children
-//     pub fn compute_layout(&mut self, node: Node, available_space: Size<AvailableSpace>) -> Result<(), TaffyError> {
+//     pub fn compute_layout(&mut self, node: impl Node, available_space: Size<AvailableSpace>) -> Result<(), TaffyError> {
 //         crate::compute::compute_layout(self, node, available_space)
 //     }
 // }

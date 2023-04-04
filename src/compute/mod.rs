@@ -7,11 +7,13 @@ pub(crate) mod leaf;
 #[cfg(feature = "grid")]
 pub(crate) mod grid;
 
+use slotmap::DefaultKey;
+
 use crate::data::CACHE_SIZE;
 use crate::error::TaffyError;
 use crate::geometry::{Point, Size};
 use crate::layout::{Cache, Layout, RunMode, SizeAndBaselines, SizingMode};
-use crate::node::{Node, Taffy};
+use crate::node::{NodeKey, Taffy, TaffyNode};
 use crate::style::{AvailableSpace, Display};
 use crate::sys::round;
 use crate::tree::LayoutTree;
@@ -25,7 +27,7 @@ use self::leaf::LeafAlgorithm;
 use crate::debug::NODE_LOGGER;
 
 /// Updates the stored layout of the provided `node` and its children
-pub fn compute_layout(taffy: &mut Taffy, root: Node, available_space: Size<AvailableSpace>) -> Result<(), TaffyError> {
+pub fn compute_layout(taffy: &mut Taffy, root: TaffyNode, available_space: Size<AvailableSpace>) -> Result<(), TaffyError> {
     // Recursively compute node layout
     let size_and_baselines = GenericAlgorithm::perform_layout(
         taffy,
@@ -48,14 +50,14 @@ pub fn compute_layout(taffy: &mut Taffy, root: Node, available_space: Size<Avail
 }
 
 /// A common interface that all Taffy layout algorithms conform to
-pub(crate) trait LayoutAlgorithm {
+pub(crate) trait LayoutAlgorithm<K: NodeKey = DefaultKey> {
     /// The name of the algorithm (mainly used for debug purposes)
     const NAME: &'static str;
 
     /// Compute the size of the node given the specified constraints
     fn measure_size(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -64,8 +66,8 @@ pub(crate) trait LayoutAlgorithm {
 
     /// Perform a full layout on the node given the specified constraints
     fn perform_layout(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -75,13 +77,15 @@ pub(crate) trait LayoutAlgorithm {
 
 /// The public interface to a generic algorithm that abstracts over all of Taffy's algorithms
 /// and applies the correct one based on the `Display` style
+#[derive(Default)]
 pub struct GenericAlgorithm;
-impl LayoutAlgorithm for GenericAlgorithm {
+
+impl <K: NodeKey> LayoutAlgorithm<K> for GenericAlgorithm {
     const NAME: &'static str = "GENERIC";
 
     fn perform_layout(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -99,8 +103,8 @@ impl LayoutAlgorithm for GenericAlgorithm {
     }
 
     fn measure_size(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -120,9 +124,9 @@ impl LayoutAlgorithm for GenericAlgorithm {
 }
 
 /// Updates the stored layout of the provided `node` and its children
-fn compute_node_layout(
-    tree: &mut impl LayoutTree,
-    node: Node,
+fn compute_node_layout<K: NodeKey, L: LayoutTree<K>>(
+    tree: &mut L,
+    node: K,
     known_dimensions: Size<Option<f32>>,
     parent_size: Size<Option<f32>>,
     available_space: Size<AvailableSpace>,
@@ -153,9 +157,9 @@ fn compute_node_layout(
 
     /// Inlined function generic over the LayoutAlgorithm to reduce code duplication
     #[inline(always)]
-    fn perform_computations<Algorithm: LayoutAlgorithm>(
-        tree: &mut impl LayoutTree,
-        node: Node,
+    fn perform_computations<K: NodeKey, Algorithm: LayoutAlgorithm<K>>(
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -180,7 +184,7 @@ fn compute_node_layout(
     let display_mode = tree.style(node).display;
     let has_children = !tree.is_childless(node);
     let computed_size_and_baselines = match (display_mode, has_children) {
-        (Display::None, _) => perform_computations::<HiddenAlgorithm>(
+        (Display::None, _) => perform_computations::<K, HiddenAlgorithm>(
             tree,
             node,
             known_dimensions,
@@ -189,7 +193,7 @@ fn compute_node_layout(
             run_mode,
             sizing_mode,
         ),
-        (Display::Flex, true) => perform_computations::<FlexboxAlgorithm>(
+        (Display::Flex, true) => perform_computations::<K, FlexboxAlgorithm>(
             tree,
             node,
             known_dimensions,
@@ -199,7 +203,7 @@ fn compute_node_layout(
             sizing_mode,
         ),
         #[cfg(feature = "grid")]
-        (Display::Grid, true) => perform_computations::<CssGridAlgorithm>(
+        (Display::Grid, true) => perform_computations::<K, CssGridAlgorithm>(
             tree,
             node,
             known_dimensions,
@@ -208,7 +212,7 @@ fn compute_node_layout(
             run_mode,
             sizing_mode,
         ),
-        (_, false) => perform_computations::<LeafAlgorithm>(
+        (_, false) => perform_computations::<K, LeafAlgorithm>(
             tree,
             node,
             known_dimensions,
@@ -302,9 +306,9 @@ fn compute_cache_slot(known_dimensions: Size<Option<f32>>, available_space: Size
 
 /// Try to get the computation result from the cache.
 #[inline]
-fn compute_from_cache(
-    tree: &mut impl LayoutTree,
-    node: Node,
+fn compute_from_cache<K: NodeKey>(
+    tree: &mut impl LayoutTree<K>,
+    node: K,
     known_dimensions: Size<Option<f32>>,
     available_space: Size<AvailableSpace>,
     run_mode: RunMode,
@@ -338,12 +342,13 @@ fn compute_from_cache(
 
 /// The public interface to Taffy's hidden node algorithm implementation
 struct HiddenAlgorithm;
-impl LayoutAlgorithm for HiddenAlgorithm {
+
+impl <K: NodeKey> LayoutAlgorithm<K> for HiddenAlgorithm {
     const NAME: &'static str = "NONE";
 
     fn perform_layout(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         _known_dimensions: Size<Option<f32>>,
         _parent_size: Size<Option<f32>>,
         _available_space: Size<AvailableSpace>,
@@ -354,8 +359,8 @@ impl LayoutAlgorithm for HiddenAlgorithm {
     }
 
     fn measure_size(
-        _tree: &mut impl LayoutTree,
-        _node: Node,
+        _tree: &mut impl LayoutTree<K>,
+        _node: K,
         _known_dimensions: Size<Option<f32>>,
         _parent_size: Size<Option<f32>>,
         _available_space: Size<AvailableSpace>,
@@ -367,9 +372,9 @@ impl LayoutAlgorithm for HiddenAlgorithm {
 
 /// Creates a layout for this node and its children, recursively.
 /// Each hidden node has zero size and is placed at the origin
-fn perform_hidden_layout(tree: &mut impl LayoutTree, node: Node) {
+fn perform_hidden_layout<K: NodeKey>(tree: &mut impl LayoutTree<K>, node: K) {
     /// Recursive function to apply hidden layout to all descendents
-    fn perform_hidden_layout_inner(tree: &mut impl LayoutTree, node: Node, order: u32) {
+    fn perform_hidden_layout_inner<K: NodeKey>(tree: &mut impl LayoutTree<K>, node: K, order: u32) {
         *tree.layout_mut(node) = Layout::with_order(order);
         for order in 0..tree.child_count(node) {
             perform_hidden_layout_inner(tree, tree.child(node, order), order as _);
@@ -388,7 +393,7 @@ fn perform_hidden_layout(tree: &mut impl LayoutTree, node: Node) {
 ///     rather than rounding the width/height directly
 ///
 /// See <https://github.com/facebook/yoga/commit/aa5b296ac78f7a22e1aeaf4891243c6bb76488e2> for more context
-fn round_layout(tree: &mut impl LayoutTree, node: Node, abs_x: f32, abs_y: f32) {
+fn round_layout<K: NodeKey>(tree: &mut impl LayoutTree<K>, node: K, abs_x: f32, abs_y: f32) {
     let layout = tree.layout_mut(node);
     let abs_x = abs_x + layout.location.x;
     let abs_y = abs_y + layout.location.y;

@@ -4,7 +4,7 @@ use crate::compute::LayoutAlgorithm;
 use crate::geometry::{Point, Size};
 use crate::layout::{SizeAndBaselines, SizingMode};
 use crate::math::MaybeMath;
-use crate::node::Node;
+use crate::node::NodeKey;
 use crate::resolve::{MaybeResolve, ResolveOrZero};
 use crate::style::AvailableSpace;
 use crate::sys::f32_max;
@@ -15,12 +15,12 @@ use crate::debug::NODE_LOGGER;
 
 /// The public interface to Taffy's leaf node algorithm implementation
 pub(crate) struct LeafAlgorithm;
-impl LayoutAlgorithm for LeafAlgorithm {
+impl <K: NodeKey> LayoutAlgorithm<K> for LeafAlgorithm {
     const NAME: &'static str = "LEAF";
 
     fn perform_layout(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -30,8 +30,8 @@ impl LayoutAlgorithm for LeafAlgorithm {
     }
 
     fn measure_size(
-        tree: &mut impl LayoutTree,
-        node: Node,
+        tree: &mut impl LayoutTree<K>,
+        node: K,
         known_dimensions: Size<Option<f32>>,
         parent_size: Size<Option<f32>>,
         available_space: Size<AvailableSpace>,
@@ -42,9 +42,9 @@ impl LayoutAlgorithm for LeafAlgorithm {
 }
 
 /// Compute the size of a leaf node (node with no children)
-pub(crate) fn compute(
-    tree: &mut impl LayoutTree,
-    node: Node,
+pub(crate) fn compute<K: NodeKey>(
+    tree: &mut impl LayoutTree<K>,
+    node: K,
     known_dimensions: Size<Option<f32>>,
     parent_size: Size<Option<f32>>,
     available_space: Size<AvailableSpace>,
