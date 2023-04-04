@@ -1,4 +1,5 @@
 use core::fmt::{Debug, Display, Write};
+use bevy::prelude::Entity;
 use slotmap::Key;
 use std::sync::Mutex;
 
@@ -59,10 +60,10 @@ impl DebugLogger {
         Self { stack: Mutex::new(Vec::new()) }
     }
 
-    pub fn push_node(&self, new_key: impl Key) {
+    pub fn push_node(&self, new_key: Entity) {
         let mut stack = self.stack.lock().unwrap();
         let mut key_string = String::new();
-        write!(&mut key_string, "{:?}", new_key.data()).unwrap();
+        write!(&mut key_string, "{:?}", new_key).unwrap();
         stack.push(key_string);
     }
 

@@ -37,7 +37,7 @@ pub fn compute_layout(taffy: &mut World, root: Node, available_space: Size<Avail
         available_space,
         SizingMode::InherentSize,
     );
-
+    
     let layout = Layout { order: 0, size: size_and_baselines.size, location: Point::ZERO };
     *taffy.layout_mut(root) = layout;
 

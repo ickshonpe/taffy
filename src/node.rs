@@ -85,7 +85,7 @@ impl LayoutTree for World {
         if let Some(children) = self.get::<Children>(node) {
             children.is_empty()
         } else {
-            return false;
+            return true;
         }
     }
 
@@ -502,20 +502,16 @@ mod tests {
     }
 
     #[test]
-    fn set_measure() {
+    fn set_measure_x() {
         let mut taffy = Taffy::new();
         init_ui(&mut taffy);
         let node = taffy
             .new_leaf_with_measure(Style::default(), MeasureFunc::Raw(|_, _| {
-                println!("measure called");
                 Size { width: 200.0, height: 200.0 }
             }))
             .unwrap();
-        println!("needs measure: {}", crate::tree::LayoutTree::needs_measure(&taffy, node));
-        println!("has measure func: {}", taffy.entity(node).contains::<MeasureFunc>());
 
         taffy.compute_layout(node, Size::MAX_CONTENT).unwrap();
-        println!("layout: {:?}", taffy.layout(node).unwrap());
         assert_eq!(taffy.layout(node).unwrap().size.width, 200.0);
 
         taffy.set_measure(node, Some(MeasureFunc::Raw(|_, _| Size { width: 100.0, height: 100.0 }))).unwrap();
